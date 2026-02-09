@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* --- Obsidian Labs Palette --- */
+  --brick-red: #ce2a34;
+  --old-brick: #951b22;
+  --crimson: #e70f1a;
+  --baltic-sea: #222023;
+  --copper-rust: #894d50;
+  --salt-box: #676568;
+  --mahogany: #5e080f;
+  --heath: #400e13;
+  --can-can: #da9b9d;
+
+  /* Functional Colors */
+  --primary: var(--brick-red);
+  --primary-hover: var(--old-brick);
+  --secondary: var(--baltic-sea);
+  --bg-light: #f8fafc;
+  --border: #e2e8f0;
+}
+
+body {
+  background-color: var(--bg-light);
+  color: var(--secondary);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Reusable Classes */
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--primary-hover)] transition-colors inline-flex items-center gap-2;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4;
+  }
+
+  .input-field {
+    @apply w-full p-3 rounded-lg border border-[var(--border)] focus:outline-none focus:border-[var(--primary)];
+  }
+}
