@@ -8,18 +8,23 @@ import {
   ChevronUp,
   Package,
   Loader2,
+  Upload,
+  Image as ImageIcon,
+  Save,
 } from "lucide-react";
 
 export default function ProductManager() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Form State
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("Peptides");
   const [newPrice, setNewPrice] = useState("");
   const [newStock, setNewStock] = useState(true);
+  const [newImage, setNewImage] = useState("");
 
   useEffect(() => {
     fetchProducts();
@@ -27,7 +32,6 @@ export default function ProductManager() {
 
   async function fetchProducts() {
     setLoading(true);
-    // Fetch products AND their variants
     const { data, error } = await supabase
       .from("products")
       .select(`*, variants (*)`)
@@ -36,6 +40,71 @@ export default function ProductManager() {
     if (error) console.error("Error fetching products:", error);
     else setProducts(data || []);
     setLoading(false);
+  }
+
+  // --- IMAGE COMPRESSION & UPLOAD ---
+  async function handleImageUpload(file) {
+    if (!file) return null;
+
+    try {
+      setUploading(true);
+
+      // 1. Compress Image (Client-side)
+      const compressedFile = await compressImage(file);
+
+      // 2. Upload to Supabase
+      const fileExt = "jpg"; // We convert everything to JPG
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, compressedFile);
+
+      if (uploadError) throw uploadError;
+
+      // 3. Get Public URL
+      const { data } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      alert("Upload failed: " + error.message);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Helper: Compress Image using Canvas
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1200;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(
+            (blob) => {
+              resolve(new File([blob], file.name, { type: "image/jpeg" }));
+            },
+            "image/jpeg",
+            0.8,
+          ); // 80% Quality
+        };
+      };
+    });
   }
 
   async function handleCreate() {
@@ -48,13 +117,14 @@ export default function ProductManager() {
         name: newName,
         category: newCategory,
         in_stock: newStock,
+        image_url: newImage,
       })
       .select()
       .single();
 
     if (error) return alert("Error creating product: " + error.message);
 
-    // 2. Create Default Variant (Standard Size)
+    // 2. Create Default Variant
     const { error: variantError } = await supabase.from("variants").insert({
       product_id: prod.id,
       size_label: "Standard",
@@ -63,38 +133,29 @@ export default function ProductManager() {
 
     if (variantError) alert("Error creating variant: " + variantError.message);
 
-    // Reset Form
     setIsAdding(false);
     setNewName("");
     setNewPrice("");
+    setNewImage("");
     fetchProducts();
   }
 
   async function handleDelete(id) {
-    if (
-      !confirm("Are you sure? This will delete the product and its variants.")
-    )
-      return;
-
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) alert("Error deleting: " + error.message);
-    else fetchProducts();
+    if (!confirm("Delete product and all variants?")) return;
+    await supabase.from("products").delete().eq("id", id);
+    fetchProducts();
   }
 
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[var(--baltic-sea)]">
-            Product Inventory
+            Inventory
           </h1>
-          <p className="text-gray-500">Manage your catalog and pricing</p>
         </div>
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-[var(--brick-red)] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[var(--old-brick)] transition-colors flex items-center gap-2"
-        >
+        <button onClick={() => setIsAdding(!isAdding)} className="btn-primary">
           {isAdding ? (
             "Cancel"
           ) : (
@@ -107,54 +168,71 @@ export default function ProductManager() {
 
       {/* Add Product Form */}
       {isAdding && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-          <h3 className="font-bold text-lg mb-4 text-[var(--baltic-sea)]">
-            New Product Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div className="col-span-1 md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500 mb-1">
-                PRODUCT NAME
-              </label>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
+          <h3 className="font-bold text-lg mb-4">New Product</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <input
+              placeholder="Product Name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="input-field"
+            />
+            <select
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="input-field bg-white"
+            >
+              <option>Peptides</option>
+              <option>Peptide Blends</option>
+              <option>Accessories</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Price (AUD)"
+              value={newPrice}
+              onChange={(e) => setNewPrice(e.target.value)}
+              className="input-field"
+            />
+
+            {/* Image Upload Input */}
+            <div className="flex items-center gap-3">
               <input
-                placeholder="e.g. BPC-157"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[var(--brick-red)]"
+                placeholder="Image URL (optional)"
+                value={newImage}
+                onChange={(e) => setNewImage(e.target.value)}
+                className="input-field flex-1"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">
-                CATEGORY
+              <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 p-3 rounded-lg border border-gray-300 transition-colors">
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const url = await handleImageUpload(e.target.files[0]);
+                    if (url) setNewImage(url);
+                  }}
+                />
+                {uploading ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <Upload size={20} />
+                )}
               </label>
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[var(--brick-red)] bg-white"
-              >
-                <option>Peptides</option>
-                <option>Peptide Blends</option>
-                <option>Accessories</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">
-                PRICE (AUD)
-              </label>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={newPrice}
-                onChange={(e) => setNewPrice(e.target.value)}
-                className="w-full p-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[var(--brick-red)]"
-              />
             </div>
           </div>
+
+          {newImage && (
+            <div className="mb-4">
+              <img
+                src={newImage}
+                alt="Preview"
+                className="h-20 w-20 object-cover rounded border border-gray-200"
+              />
+            </div>
+          )}
+
           <div className="flex justify-end">
-            <button
-              onClick={handleCreate}
-              className="bg-[var(--baltic-sea)] text-white px-6 py-2 rounded-lg font-medium hover:bg-black transition-colors"
-            >
+            <button onClick={handleCreate} className="btn-primary">
               Save Product
             </button>
           </div>
@@ -162,119 +240,130 @@ export default function ProductManager() {
       )}
 
       {/* Product List */}
-      {loading ? (
-        <div className="text-center py-12">
-          <Loader2 className="animate-spin mx-auto text-gray-400" size={32} />
-          <p className="text-gray-500 mt-4">Loading inventory...</p>
-        </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
-          <Package className="mx-auto text-gray-300 mb-3" size={48} />
-          <p className="text-gray-500">
-            No products found. Start by adding one.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {products.map((product) => (
-            <ProductRow
-              key={product.id}
-              product={product}
-              onDelete={() => handleDelete(product.id)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="space-y-4">
+        {products.map((product) => (
+          <ProductRow
+            key={product.id}
+            product={product}
+            onDelete={() => handleDelete(product.id)}
+            handleUpload={handleImageUpload}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-function ProductRow({ product, onDelete }) {
+// --- SUB-COMPONENT: Product Row ---
+function ProductRow({ product, onDelete, handleUpload }) {
   const [expanded, setExpanded] = useState(false);
-  // Get the first variant's price to display as the "main" price
-  const mainPrice =
-    product.variants && product.variants.length > 0
-      ? product.variants[0].price
-      : 0;
+  const [name, setName] = useState(product.name);
+  const [image, setImage] = useState(product.image_url);
+  const [uploading, setUploading] = useState(false);
+
+  const mainPrice = product.variants?.[0]?.price || 0;
+
+  async function handleSave() {
+    await supabase
+      .from("products")
+      .update({ name, image_url: image })
+      .eq("id", product.id);
+    alert("Saved!");
+  }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-            <Package size={20} />
+          <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden border border-gray-100">
+            {image ? (
+              <img
+                src={image}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Package size={20} className="text-gray-400" />
+            )}
           </div>
           <div>
-            <h4 className="font-bold text-[var(--baltic-sea)]">
-              {product.name}
-            </h4>
-            <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded mt-1">
+            <h4 className="font-bold text-[var(--baltic-sea)]">{name}</h4>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
               {product.category}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="text-right hidden sm:block">
-            <div className="font-bold text-[var(--brick-red)]">
-              ${mainPrice}
-            </div>
-            <div className="text-xs text-gray-400">Standard Price</div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="p-2 text-gray-400 hover:text-[var(--baltic-sea)] transition-colors"
-            >
-              {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </button>
-            <button
-              onClick={onDelete}
-              className="p-2 text-red-400 hover:text-red-600 transition-colors"
-              title="Delete Product"
-            >
-              <Trash2 size={20} />
-            </button>
-          </div>
+        <div className="flex items-center gap-4">
+          <span className="font-bold text-[var(--brick-red)]">
+            ${mainPrice}
+          </span>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-2 text-gray-400 hover:text-black"
+          >
+            {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 text-red-400 hover:text-red-600"
+          >
+            <Trash2 size={20} />
+          </button>
         </div>
       </div>
 
-      {/* Expanded Details */}
       {expanded && (
-        <div className="bg-gray-50 p-4 border-t border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div className="bg-gray-50 p-6 border-t border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-gray-500 mb-1 font-semibold text-xs">
-                PRODUCT ID
-              </p>
-              <code className="bg-white px-2 py-1 rounded border border-gray-200 text-xs block w-full">
-                {product.id}
-              </code>
+              <label className="block text-xs font-bold text-gray-500 mb-1">
+                NAME
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input-field bg-white"
+              />
             </div>
             <div>
-              <p className="text-gray-500 mb-1 font-semibold text-xs">STATUS</p>
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${product.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-              >
-                {product.in_stock ? "In Stock" : "Out of Stock"}
-              </span>
-            </div>
-            <div className="col-span-1 md:col-span-2 mt-2">
-              <p className="text-gray-500 mb-2 font-semibold text-xs">
-                VARIANTS
-              </p>
-              {product.variants?.map((v, i) => (
-                <div
-                  key={v.id || i}
-                  className="flex justify-between items-center bg-white p-2 rounded border border-gray-200 mb-2"
-                >
-                  <span>{v.size_label}</span>
-                  <span className="font-mono font-medium">${v.price}</span>
-                </div>
-              ))}
+              <label className="block text-xs font-bold text-gray-500 mb-1">
+                IMAGE
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={image || ""}
+                  onChange={(e) => setImage(e.target.value)}
+                  className="input-field bg-white flex-1"
+                  placeholder="https://..."
+                />
+                <label className="bg-white border border-gray-300 p-2 rounded cursor-pointer hover:bg-gray-100 flex items-center justify-center w-12">
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={async (e) => {
+                      setUploading(true);
+                      const url = await handleUpload(e.target.files[0]);
+                      if (url) setImage(url);
+                      setUploading(false);
+                    }}
+                  />
+                  {uploading ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Upload size={16} />
+                  )}
+                </label>
+              </div>
             </div>
           </div>
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 bg-[var(--baltic-sea)] text-white px-4 py-2 rounded hover:bg-black text-sm font-bold"
+          >
+            <Save size={16} /> Save Changes
+          </button>
         </div>
       )}
     </div>

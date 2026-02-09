@@ -12,7 +12,7 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-3 group">
           {/* Logo Image */}
           <img
-            src="/logo.png"
+            src="/1.png"
             alt="Obsidian Labs AU"
             className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
           />

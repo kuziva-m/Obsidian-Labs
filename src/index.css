@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   /* --- Obsidian Labs Palette --- */
@@ -14,31 +12,74 @@
   --heath: #400e13;
   --can-can: #da9b9d;
 
-  /* Functional Colors */
-  --primary: var(--brick-red);
-  --primary-hover: var(--old-brick);
-  --secondary: var(--baltic-sea);
-  --bg-light: #f8fafc;
-  --border: #e2e8f0;
+  --bg-light: #f0f4f8;
 }
 
+@theme {
+  --color-primary: var(--brick-red);
+  --color-secondary: var(--baltic-sea);
+  --font-display: "Oswald", sans-serif;
+  --font-body: "Manrope", sans-serif;
+}
+
+/* Base Settings */
 body {
   background-color: var(--bg-light);
-  color: var(--secondary);
-  font-family: "Inter", system-ui, sans-serif;
+  color: var(--baltic-sea);
+  font-family: var(--font-body);
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
-/* Reusable Classes */
+/* --- KINETIC TYPOGRAPHY --- */
+.kinetic-text {
+  transform: translateY(120%);
+  opacity: 0;
+  transition:
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.5s ease;
+}
+.kinetic-text.active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* --- RESPONSIVE UTILITIES --- */
 @layer components {
-  .btn-primary {
-    @apply bg-[var(--primary)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--primary-hover)] transition-colors inline-flex items-center gap-2;
-  }
-
+  /* Better container for mobile */
   .container-custom {
-    @apply max-w-7xl mx-auto px-4;
+    @apply w-full max-w-7xl mx-auto px-4 md:px-8;
   }
 
-  .input-field {
-    @apply w-full p-3 rounded-lg border border-[var(--border)] focus:outline-none focus:border-[var(--primary)];
+  /* Hide scrollbar for category tabs on mobile */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+/* --- Add to the bottom of src/index.css --- */
+
+/* MARQUEE ANIMATION */
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Hide scrollbar for carousel container */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
