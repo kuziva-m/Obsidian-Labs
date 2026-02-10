@@ -1,0 +1,44 @@
+.aboutBand {
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  padding: 100px 0;
+}
+.aboutBand__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.aboutBand__headline {
+  color: var(--red);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.aboutBand__title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 1.5rem;
+}
+.aboutBand__text {
+  color: var(--muted);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+.aboutBand__img {
+  width: 100%;
+  border-radius: var(--radius);
+  filter: grayscale(100%);
+  transition: 0.5s;
+}
+.aboutBand__img:hover {
+  filter: grayscale(0);
+}
+
+@media (max-width: 900px) {
+  .aboutBand__inner {
+    grid-template-columns: 1fr;
+  }
+}

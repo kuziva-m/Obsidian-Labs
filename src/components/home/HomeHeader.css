@@ -1,0 +1,80 @@
+/* Header specific styles */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: white;
+}
+.brand__logo {
+  height: 40px;
+}
+.brand__name {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.brand__sub {
+  font-size: 0.7rem;
+  color: var(--red);
+  letter-spacing: 0.3em;
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  gap: 32px;
+}
+.nav__link {
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav__link:hover {
+  color: white;
+}
+
+.topbar__actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.iconBtn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: white;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.iconBtn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+@media (max-width: 900px) {
+  .nav {
+    display: none;
+  }
+}

@@ -1,0 +1,115 @@
+/* Container for the whole section */
+.hero {
+  padding: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* The White "Card" */
+.hero__inner {
+  position: relative;
+  background-color: #ffffff; /* Explicit White Background */
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #111111; /* Dark Text for White Background */
+}
+
+/* Background Image Handling */
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero__bgImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Lighter opacity so text is readable */
+  opacity: 0.15;
+  filter: grayscale(100%);
+}
+
+/* Overlay to ensure text contrast if image is busy */
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+}
+
+/* Content Layout */
+.hero__content {
+  position: relative;
+  z-index: 10;
+  max-width: 800px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Logo Styling */
+.hero__mark {
+  height: 80px; /* Adjust size as needed */
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 24px;
+  display: block;
+}
+
+/* Typography */
+.hero__title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  color: #111111; /* Dark Black */
+  letter-spacing: -0.02em;
+}
+
+.hero__subtitle {
+  font-size: 1.25rem;
+  color: #555555; /* Dark Grey */
+  margin-bottom: 32px;
+  font-weight: 500;
+}
+
+/* Button override for this section */
+.hero .btn--cta {
+  background: linear-gradient(135deg, var(--red) 0%, #b01a22 100%);
+  color: white;
+  padding: 16px 40px;
+  font-size: 1.1rem;
+  border-radius: 50px;
+  box-shadow: 0 10px 25px rgba(206, 42, 52, 0.3);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.hero .btn--cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(206, 42, 52, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero__inner {
+    min-height: 400px;
+    border-radius: 0; /* Full width on mobile */
+  }
+
+  .hero__mark {
+    height: 60px;
+  }
+}
