@@ -42,7 +42,7 @@ export default function Navbar() {
             SHOP
           </Link>
           <Link
-            to="/admin"
+            to="/pages/admin"
             className="text-sm font-medium text-gray-300 hover:text-[var(--primary)] transition-colors flex items-center gap-2"
           >
             <User size={16} /> ADMIN
