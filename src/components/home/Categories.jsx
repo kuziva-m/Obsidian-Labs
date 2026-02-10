@@ -1,47 +1,73 @@
 import { Link } from "react-router-dom";
-import { KineticText, CurtainReveal } from "./Animations";
+import { Layers, Syringe, FlaskConical } from "lucide-react";
 
 export default function Categories() {
   return (
-    <section className="py-16 md:py-24 bg-white relative border-b border-gray-200">
-      <div className="container mx-auto px-6 md:px-12">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
-          <div className="order-2 lg:order-1">
-            <h2 className="font-[Oswald] font-bold text-4xl md:text-6xl text-[var(--baltic-sea)] mb-6 uppercase leading-none">
-              Research{" "}
-              <span className="text-[var(--brick-red)]">Categories</span>
-            </h2>
-            <div className="h-1 w-16 bg-[var(--baltic-sea)] mb-8"></div>
+    <section className="py-20 bg-white border-b-2 border-gray-200">
+      <div className="container mx-auto px-4">
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="font-[Oswald] text-4xl uppercase text-[var(--baltic-sea)] mb-4">
+            Research Divisions
+          </h2>
+          <div className="h-1 w-20 bg-[var(--brick-red)] mx-auto"></div>
+        </div>
 
-            <div className="prose text-[var(--salt-box)] text-base md:text-lg leading-relaxed mb-8">
-              <p className="mb-4">
-                We recognize that in the field of research, purity is paramount.
-                Unlike generic suppliers, our testing protocols are rigorous and
-                transparent.
-              </p>
-              <p className="font-bold text-[var(--baltic-sea)] border-l-4 border-[var(--brick-red)] pl-4 py-2 bg-gray-50 text-sm md:text-base">
-                "We do not aspire to be the biggest in our industry… only the
-                BEST!"
-              </p>
-            </div>
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Peptides */}
+          <CategoryCard
+            icon={<FlaskConical size={40} />}
+            title="Peptides"
+            desc="High-purity synthetic compounds for cellular research."
+            link="/shop?category=Peptides"
+          />
 
-            <Link
-              to="/shop"
-              className="inline-block px-8 py-4 bg-[var(--baltic-sea)] text-white font-[Oswald] uppercase tracking-widest text-xs hover:bg-[var(--brick-red)] transition-colors w-full sm:w-auto text-center"
-            >
-              Explore All Compounds
-            </Link>
-          </div>
+          {/* Blends */}
+          <CategoryCard
+            icon={<Layers size={40} />}
+            title="Peptide Blends"
+            desc="Synergistic formulations for advanced protocols."
+            link="/shop?category=Peptide Blends"
+          />
 
-          <div className="h-[300px] md:h-[500px] w-full order-1 lg:order-2">
-            <CurtainReveal
-              src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&q=80"
-              alt="Lab Equipment"
-              className="h-full w-full"
-            />
-          </div>
+          {/* Supplies */}
+          <CategoryCard
+            icon={<Syringe size={40} />}
+            title="Lab Supplies"
+            desc="Sterile equipment and BAC water for handling."
+            link="/shop?category=Accessories"
+          />
         </div>
       </div>
     </section>
+  );
+}
+
+function CategoryCard({ icon, title, desc, link }) {
+  return (
+    <Link
+      to={link}
+      className="group block p-8 border-2 border-[var(--baltic-sea)] hover:bg-[var(--baltic-sea)] transition-all duration-300"
+    >
+      <div className="text-[var(--brick-red)] mb-6 group-hover:text-white transition-colors">
+        {icon}
+      </div>
+
+      <h3 className="font-[Oswald] text-2xl uppercase mb-3 text-[var(--baltic-sea)] group-hover:text-white transition-colors">
+        {title}
+      </h3>
+
+      <p className="font-mono text-sm text-gray-500 group-hover:text-gray-300 transition-colors leading-relaxed">
+        {desc}
+      </p>
+
+      <div className="mt-6 flex items-center gap-2 text-[var(--brick-red)] font-[Oswald] uppercase text-sm font-bold tracking-wider group-hover:text-white">
+        View Catalog{" "}
+        <span className="group-hover:translate-x-1 transition-transform">
+          →
+        </span>
+      </div>
+    </Link>
   );
 }

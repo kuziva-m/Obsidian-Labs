@@ -1,97 +1,92 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { KineticText } from "./Animations"; // Import helper
-import "./Hero.css"; // Ensure you use the CSS below
-
-function PeptideCarousel() {
-  const images = ["/1.png", "/2.png", "/3.png", "/4.png", "/5.png"];
-
-  return (
-    <div className="w-full overflow-hidden border-y border-white/10 bg-black/20 backdrop-blur-sm mb-8">
-      <div className="flex animate-marquee gap-8 py-4 w-max hover:cursor-pointer">
-        {[...images, ...images, ...images].map((src, i) => (
-          <div
-            key={i}
-            className="relative group w-24 h-24 md:w-32 md:h-32 flex-shrink-0 bg-white/5 border border-white/10 rounded-lg p-2 flex items-center justify-center transition-colors hover:border-[var(--brick-red)]"
-          >
-            <img
-              src={src}
-              alt={`Peptide ${i}`}
-              className="w-full h-full object-contain transition-all duration-500 transform group-hover:scale-110"
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { ArrowRight, Microscope, ShieldCheck, Zap } from "lucide-react";
+import "./Hero.css";
 
 export default function Hero() {
   return (
-    <header className="relative min-h-[90vh] flex items-center bg-[var(--baltic-sea)]">
-      {/* Background Overlay */}
-      <div className="absolute inset-0 z-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1579165466741-7f35e4755652?auto=format&fit=crop&q=80')] bg-cover bg-center grayscale"></div>
+    <section className="hero-section">
+      {/* Background Grid Pattern */}
+      <div className="hero-grid-bg"></div>
 
-      <div className="relative z-10 container pt-28 pb-12">
-        <div className="max-w-6xl mx-auto">
-          {/* 1. TOP LABEL */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="h-[2px] w-8 md:w-12 bg-[var(--brick-red)]"></div>
-            <span className="text-[var(--brick-red)] font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs">
-              Est. 2026 • Research Protocols
-            </span>
-          </div>
+      <div className="container mx-auto px-4 relative z-10 h-full flex flex-col justify-center">
+        {/* UPDATED: Changed items-center to items-start for precise desktop alignment */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* --- LEFT COLUMN: CONTENT --- */}
+          <div className="lg:col-span-7 flex flex-col gap-6 pt-10">
+            {/* Title Row + Mobile Image */}
+            <div className="flex flex-row items-center gap-4 sm:gap-6">
+              {/* MOBILE ONLY: Molecule moved to LEFT */}
+              <img
+                src="/molecule.png"
+                alt="Molecule"
+                className="w-24 h-24 sm:w-32 sm:h-32 object-contain opacity-90 lg:hidden animate-float flex-shrink-0"
+              />
 
-          {/* 2. CAROUSEL & LOGO ROW */}
-          <div className="flex flex-col lg:flex-row items-center gap-12 mb-12">
-            <div className="flex-1 w-full lg:max-w-2xl">
-              <PeptideCarousel />
+              <h1 className="hero-title">
+                Precision <br />
+                <span className="text-outline">Research Protocols</span>
+              </h1>
             </div>
 
-            <div className="hidden lg:block flex-shrink-0">
-              <div className="border border-white/10 p-4 bg-white/5 rounded-xl backdrop-blur-md">
-                <img
-                  src="/logo.jpeg"
-                  alt="Obsidian Labs Logo"
-                  className="w-48 h-auto object-contain drop-shadow-2xl opacity-90 hover:opacity-100 transition-opacity"
+            {/* Description */}
+            <p className="hero-desc">
+              Obsidian Labs supplies high-purity, HPLC-verified peptide
+              compounds exclusively for laboratory research. Australian owned,
+              domestically dispatched, and uncompromising on quality.
+            </p>
+
+            {/* Specs Grid */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 border-y border-gray-800 py-6 my-2">
+              <div className="spec-item">
+                <ShieldCheck
+                  size={24}
+                  className="text-[var(--brick-red)] mb-2"
                 />
+                <span className="spec-label">Purity</span>
+                <span className="spec-value">&gt;99%</span>
+              </div>
+              <div className="spec-item">
+                <Microscope
+                  size={24}
+                  className="text-[var(--brick-red)] mb-2"
+                />
+                <span className="spec-label">Grade</span>
+                <span className="spec-value">Research</span>
+              </div>
+              <div className="spec-item">
+                <Zap size={24} className="text-[var(--brick-red)] mb-2" />
+                <span className="spec-label">Shipping</span>
+                <span className="spec-value">Express</span>
               </div>
             </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-4">
+              <Link to="/shop" className="btn-hero-primary">
+                Access Catalog
+              </Link>
+              <Link to="/about" className="btn-hero-secondary">
+                Lab Data <ArrowRight size={18} />
+              </Link>
+            </div>
           </div>
 
-          {/* 3. MAIN TITLE */}
-          <h1 className="font-[Oswald] font-bold text-5xl md:text-7xl lg:text-9xl text-white mb-6 leading-[0.9] uppercase tracking-tight">
-            <KineticText>Obsidian</KineticText>
-            <KineticText
-              delay={200}
-              className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--brick-red)] to-white"
-            >
-              Labs AU
-            </KineticText>
-          </h1>
+          {/* --- RIGHT COLUMN: DESKTOP VISUAL --- */}
+          {/* UPDATED: Added mt-24 to align vertically with "Research Protocols" */}
+          <div className="lg:col-span-5 relative hidden lg:flex justify-center items-center mt-24">
+            {/* Decorative Circle */}
+            <div className="absolute w-[400px] h-[400px] border border-gray-800 rounded-full animate-spin-slow opacity-30"></div>
+            <div className="absolute w-[300px] h-[300px] border border-dashed border-[var(--brick-red)] rounded-full animate-reverse-spin opacity-20"></div>
 
-          <div className="border-l-2 border-white/20 pl-6 mb-10">
-            <p className="text-base md:text-xl text-gray-400 font-light leading-relaxed max-w-xl">
-              Precision peptides for rigorous research. We provide 99% purity guaranteed compounds for laboratory use.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              to="/shop"
-              className="w-full sm:w-auto text-center px-8 py-4 bg-white text-[var(--baltic-sea)] font-bold font-[Oswald] uppercase tracking-widest text-sm hover:bg-[var(--brick-red)] hover:text-white transition-colors shadow-[4px_4px_0px_0px_#ce2a34]"
-            >
-              View Catalog
-            </Link>
-            <Link
-              to="/contact"
-              className="w-full sm:w-auto text-center px-8 py-4 border border-white text-white font-bold font-[Oswald] uppercase tracking-widest text-sm hover:bg-[var(--baltic-sea)] group flex items-center justify-center gap-2"
-            >
-              Contact Lab <ArrowRight size={16} />
-            </Link>
+            {/* Desktop Molecule Image */}
+            <img
+              src="/molecule.png"
+              alt="Peptide Structure"
+              className="relative z-10 w-full max-w-md object-contain drop-shadow-2xl animate-float"
+            />
           </div>
         </div>
       </div>
-    </header>
+    </section>
   );
 }

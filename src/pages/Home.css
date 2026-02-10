@@ -1,54 +1,16 @@
-/* --- COLORS --- */
-:root {
-  --brick-red: #ce2a34;
-  --baltic-sea: #222023;
-  --salt-box: #676568;
-}
+/* src/pages/Home.css */
 
-/* --- ANIMATIONS --- */
-
-/* 1. Kinetic Text Slide Up */
-.kinetic-text {
-  transform: translateY(120%);
-  opacity: 0;
-  transition:
-    transform 1s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.5s ease;
-}
-.kinetic-text.active {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-/* 2. Infinite Marquee */
-.animate-marquee {
-  animation: marquee 25s linear infinite;
-}
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-/* 3. Curtain Reveal */
-.curtain-container {
-  position: relative;
-  overflow: hidden;
-}
-.curtain {
-  position: absolute;
-  top: 0;
-  left: 0;
+.home-container {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  height: 100%;
-  background-color: var(--brick-red);
-  z-index: 20;
-  transform: scaleX(0);
-  transform-origin: left;
+  overflow-x: hidden; /* Prevents horizontal scroll from animations */
+  background-color: #f4f4f5; /* Light grey background for the whole page */
+}
+
+/* Optional: Add a slight gap if you want the Hero to sit lower */
+/* But usually, you want the Hero flush against the Navbar */
+#hero-section {
+  width: 100%;
+  border-bottom: 4px solid var(--baltic-sea);
 }

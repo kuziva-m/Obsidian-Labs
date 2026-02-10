@@ -1,29 +1,26 @@
 import SEO from "../components/SEO";
-import HomeHeader from "../components/home/HomeHeader";
+// REMOVED: import HomeHeader from "../components/home/HomeHeader";
 import Hero from "../components/home/Hero";
 import Categories from "../components/home/Categories";
-import Inventory from "../components/home/Inventory";
+import Inventory from "../components/home/Inventory"; // or Services.jsx if that's what you renamed it to
 import Footer from "../components/Footer";
-import "./Home.css"; // Imports the animation styles
+import "./Home.css";
 
 export default function Home() {
   return (
-    <div className="bg-[#f0f4f8] overflow-x-hidden">
-      <SEO title="Home" />
+    <div className="home-container bg-[#f4f4f5] overflow-x-hidden">
+      <SEO title="Home - Obsidian Labs" />
 
-      {/* 1. Nav (Reusing the new component) */}
-      <HomeHeader />
-
-      {/* 2. Hero (Restored Brutalist Style) */}
+      {/* 1. HERO SECTION (Brutalist & Precision) */}
       <Hero />
 
-      {/* 3. Categories (Restored Middle Section) */}
+      {/* 2. CATEGORIES (Oswald Headings + Mono Details) */}
       <Categories />
 
-      {/* 4. Inventory (Restored Tilt Cards) */}
+      {/* 3. INVENTORY PREVIEW (Shop Listings) */}
       <Inventory />
 
-      {/* 5. Footer */}
+      {/* 4. FOOTER */}
       <Footer />
     </div>
   );

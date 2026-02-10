@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useCart } from "../lib/CartContext";
 import SEO from "../components/SEO";
 import {
   LayoutGrid,
@@ -8,34 +9,46 @@ import {
   Layers,
   Syringe,
   ShoppingCart,
+  Check,
 } from "lucide-react";
+import "./Shop.css";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Get active category from URL or default to "All"
   const activeCategory = searchParams.get("category") || "All";
 
   const categories = [
-    { name: "All", icon: <LayoutGrid size={16} /> },
-    { name: "Peptides", icon: <FlaskConical size={16} /> },
-    { name: "Peptide Blends", icon: <Layers size={16} /> },
-    { name: "Accessories", icon: <Syringe size={16} /> },
+    { name: "All", icon: <LayoutGrid size={18} /> },
+    { name: "Peptides", icon: <FlaskConical size={18} /> },
+    { name: "Peptide Blends", icon: <Layers size={18} /> },
+    { name: "Accessories", icon: <Syringe size={18} /> },
   ];
 
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
       let query = supabase.from("products").select(`*, variants (*)`);
-      if (activeCategory !== "All")
-        query = query.eq("category", activeCategory);
 
-      const { data } = await query;
-      if (data) {
-        // Sort: Images first
-        const sorted = data.sort(
-          (a, b) => (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0),
-        );
+      if (activeCategory !== "All") {
+        query = query.eq("category", activeCategory);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching products:", error);
+      } else if (data) {
+        // Sort: In-stock first, then by image presence
+        const sorted = data.sort((a, b) => {
+          if (a.in_stock === b.in_stock) {
+            return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0);
+          }
+          return b.in_stock - a.in_stock;
+        });
         setProducts(sorted);
       }
       setLoading(false);
@@ -44,114 +57,161 @@ export default function Shop() {
   }, [activeCategory]);
 
   return (
-    <div className="bg-[#f0f4f8] min-h-screen pb-20">
-      <SEO title="Shop" />
+    <div className="shop-page bg-[#f4f4f5] min-h-screen pb-20">
+      <SEO title="Shop Inventory" />
 
-      {/* HEADER */}
-      <div className="bg-[var(--baltic-sea)] text-white py-12 md:py-20 px-4 border-b-4 border-[var(--brick-red)]">
-        <div className="container-custom">
-          <h1 className="font-[Oswald] text-5xl md:text-8xl uppercase font-bold tracking-tight leading-none">
-            Catalog
-          </h1>
-          <p className="text-gray-400 font-mono mt-2 md:mt-4 uppercase tracking-widest text-xs md:text-sm">
-            // STATUS: ACTIVE_INVENTORY // REGION: AU
-          </p>
-        </div>
-      </div>
+      {/* --- HEADER REMOVED --- */}
 
-      <div className="container-custom mt-8 md:mt-12">
-        {/* FILTERS (Scrollable on mobile) */}
-        <div className="flex overflow-x-auto pb-4 md:pb-0 gap-3 md:gap-4 mb-8 md:mb-12 no-scrollbar">
+      <div className="container mx-auto px-4 mt-8 pt-24">
+        {/* --- FILTERS --- */}
+        <div className="flex overflow-x-auto pb-4 gap-2 mb-8 no-scrollbar justify-center md:justify-start">
           {categories.map((cat) => (
             <button
               key={cat.name}
               onClick={() => setSearchParams({ category: cat.name })}
               className={`
-                whitespace-nowrap px-4 py-2 md:px-6 md:py-3 font-[Oswald] uppercase tracking-widest text-xs md:text-sm border-2 transition-all flex-shrink-0
+                flex items-center gap-2 px-5 py-2.5 rounded-md font-[Oswald] uppercase text-sm tracking-wide transition-all whitespace-nowrap border-2
                 ${
                   activeCategory === cat.name
                     ? "bg-[var(--brick-red)] border-[var(--brick-red)] text-white shadow-[4px_4px_0px_0px_#000]"
-                    : "bg-white border-gray-300 text-[var(--baltic-sea)] hover:border-[var(--brick-red)] hover:text-[var(--brick-red)]"
+                    : "bg-white border-[var(--baltic-sea)] text-[var(--baltic-sea)] hover:bg-gray-50"
                 }
               `}
             >
-              <span className="flex items-center gap-2">
-                {cat.icon} {cat.name}
-              </span>
+              {cat.icon}
+              {cat.name}
             </button>
           ))}
         </div>
 
-        {/* BRUTALIST PRODUCT GRID - 2 COLUMNS ON MOBILE */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
-          {loading ? (
-            <p className="font-mono text-gray-500 animate-pulse col-span-full text-center">
-              LOADING_DATABASE...
-            </p>
-          ) : (
-            products.map((p) => <BrutalistCard key={p.id} product={p} />)
-          )}
+        {/* --- GRID (2 Columns on Mobile) --- */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {loading
+            ? [...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-80 bg-gray-200 rounded-md animate-pulse border-2 border-gray-300"
+                />
+              ))
+            : products.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
+
+        {!loading && products.length === 0 && (
+          <div className="text-center py-20 border-2 border-dashed border-gray-300 rounded-md">
+            <p className="font-[Oswald] text-2xl text-gray-400 uppercase">
+              No Items Found
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Brutalist Product Card
-function BrutalistCard({ product }) {
+// --- UPDATED PRODUCT CARD (BOXIER) ---
+function ProductCard({ product }) {
+  const { addToCart } = useCart();
+  const [added, setAdded] = useState(false);
+
   const price = product.variants?.[0]?.price || 0;
+  const isOutOfStock = !product.in_stock;
+
+  const handleAdd = () => {
+    if (isOutOfStock) return;
+    addToCart(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
 
   return (
-    <div className="group bg-white border border-gray-300 md:border-2 md:border-[var(--baltic-sea)] hover:border-[var(--brick-red)] transition-colors flex flex-col h-full shadow-sm hover:shadow-[4px_4px_0px_0px_#ce2a34]">
-      {/* Image Block */}
-      <div className="relative aspect-square bg-gray-100 border-b border-gray-200 md:border-b-2 md:border-[var(--baltic-sea)] overflow-hidden">
+    <div className="group bg-white rounded-md border-2 border-[var(--baltic-sea)] overflow-hidden flex flex-col h-full hover:shadow-[6px_6px_0px_0px_var(--baltic-sea)] transition-all duration-200 relative">
+      {/* Stock Badge - Boxier (rounded-sm) */}
+      <div className="absolute top-3 right-3 z-10">
+        <span
+          className={`
+          font-bold text-[10px] uppercase px-2 py-1 rounded-sm border border-black shadow-sm
+          ${isOutOfStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-800"}
+        `}
+        >
+          {isOutOfStock ? "Sold Out" : "In Stock"}
+        </span>
+      </div>
+
+      {/* Image Area - FULL BLEED (No Padding) */}
+      <div className="aspect-[4/5] bg-gray-100 border-b-2 border-[var(--baltic-sea)] relative">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-[var(--baltic-sea)]">
-            <span className="font-[Oswald] text-white/20 text-xl md:text-4xl font-bold uppercase rotate-[-15deg]">
-              No Image
+          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+            <span className="font-[Oswald] text-gray-400 text-3xl -rotate-12 opacity-50">
+              NO IMG
             </span>
           </div>
         )}
-
-        {/* Status Tag */}
-        <div className="absolute top-2 right-2 bg-white/90 px-1.5 py-0.5 md:px-2 md:py-1 backdrop-blur-sm">
-          <span
-            className={`font-mono text-[10px] md:text-xs font-bold uppercase ${product.in_stock ? "text-green-700" : "text-red-600"}`}
-          >
-            {product.in_stock ? "IN STOCK" : "SOLD OUT"}
-          </span>
-        </div>
       </div>
 
-      {/* Text Block */}
-      <div className="p-3 md:p-5 flex flex-col flex-grow">
-        <h3 className="font-[Oswald] font-bold text-sm md:text-xl uppercase leading-tight mb-1 text-[var(--baltic-sea)] line-clamp-2">
+      {/* Content Area */}
+      <div className="p-4 flex flex-col flex-grow">
+        <div className="mb-1">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded-sm">
+            {product.category}
+          </span>
+        </div>
+
+        <h3 className="font-[Oswald] text-lg uppercase leading-tight font-bold text-[var(--baltic-sea)] mb-4 line-clamp-2 min-h-[2.5rem]">
           {product.name}
         </h3>
-        <span className="font-mono text-[10px] md:text-xs text-gray-500 mb-3 md:mb-6 block border-b border-gray-100 pb-2 md:pb-4">
-          {product.category}
-        </span>
 
-        <div className="mt-auto">
-          <div className="flex justify-between items-end mb-3 md:mb-4">
-            <div>
-              <span className="block text-[10px] font-bold uppercase text-[var(--brick-red)]">
-                Unit Price
-              </span>
-              <span className="font-[Oswald] text-lg md:text-2xl font-bold text-[var(--baltic-sea)]">
-                ${price}
-              </span>
-            </div>
+        {/* Short Name / REF code */}
+        {product.short_name && (
+          <p className="font-mono text-[10px] text-gray-400 mb-2">
+            REF: {product.short_name}
+          </p>
+        )}
+
+        {/* Price & Action Row - ALIGNED */}
+        <div className="mt-auto flex items-center justify-between gap-3 pt-3 border-t-2 border-dashed border-gray-200">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-gray-500 uppercase font-bold">
+              Price
+            </span>
+            <span className="font-[Oswald] text-xl font-bold text-[var(--brick-red)]">
+              ${price}
+            </span>
           </div>
 
-          <button className="w-full bg-[var(--baltic-sea)] text-white py-2 md:py-2.5 font-[Oswald] uppercase tracking-wider text-xs md:text-sm hover:bg-[var(--brick-red)] transition-colors flex items-center justify-center gap-2">
-            <ShoppingCart size={14} /> Add
+          {/* Button - Boxier (rounded-sm) and White Text */}
+          <button
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            className={`
+              h-10 w-10 md:w-auto md:px-5 rounded-sm flex items-center justify-center gap-2 transition-all border-2 border-[var(--baltic-sea)]
+              ${
+                isOutOfStock
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
+                  : added
+                    ? "bg-green-600 text-white border-green-700"
+                    : "bg-[var(--baltic-sea)] text-white hover:bg-[var(--brick-red)] hover:border-[var(--brick-red)]"
+              }
+            `}
+          >
+            {isOutOfStock ? (
+              <span className="text-xs font-bold">X</span>
+            ) : added ? (
+              <Check size={18} />
+            ) : (
+              <ShoppingCart size={18} className="text-white" />
+            )}
+
+            {!isOutOfStock && !added && (
+              <span className="hidden md:inline font-[Oswald] uppercase text-sm font-bold tracking-wide text-white">
+                Add
+              </span>
+            )}
           </button>
         </div>
       </div>

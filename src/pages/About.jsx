@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, ShieldCheck, Truck, Users } from "lucide-react";
 import SEO from "../components/SEO";
-import HomeHeader from "../components/home/HomeHeader";
+// REMOVED: import HomeHeader from "../components/home/HomeHeader";
 import Footer from "../components/Footer";
 import "./About.css";
 
@@ -9,7 +9,7 @@ export default function About() {
   return (
     <div className="page">
       <SEO title="About Us - Obsidian Labs" />
-      <HomeHeader />
+      {/* REMOVED: <HomeHeader /> */}
 
       <main className="about-container">
         {/* --- HERO / INTRO --- */}

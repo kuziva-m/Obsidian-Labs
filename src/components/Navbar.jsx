@@ -1,97 +1,122 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, ShoppingBag, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingCart, Search, Menu, X } from "lucide-react";
+import { useCart } from "../lib/CartContext";
+import "./Navbar.css";
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { cart, setIsCartOpen } = useCart();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === "Enter") {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    navigate("/");
+    setIsMobileMenuOpen(false);
+  };
 
   return (
-    <nav className="bg-[var(--baltic-sea)] text-white sticky top-0 z-50 shadow-md border-b border-gray-800">
-      <div className="container-custom flex justify-between items-center h-20">
-        {/* LOGO SECTION */}
-        <Link to="/" className="flex items-center gap-3 group">
-          {/* Logo Image */}
+    <nav className="navbar">
+      <div className="container mx-auto nav-top-bar">
+        {/* MOBILE MENU TOGGLE */}
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* LOGO IMAGE */}
+        <Link to="/" className="nav-logo-wrapper">
           <img
-            src="/1.png"
-            alt="Obsidian Labs AU"
-            className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
+            src="/assets/obsidian-logo-red.png"
+            alt="Obsidian Labs"
+            className="nav-logo-img"
           />
-          {/* Text Brand */}
-          <div className="flex flex-col">
-            <span className="font-bold text-lg leading-tight tracking-tight">
-              OBSIDIAN LABS
-            </span>
-            <span className="text-[10px] text-gray-400 tracking-widest uppercase">
-              Research Protocols
-            </span>
-          </div>
         </Link>
 
-        {/* DESKTOP MENU */}
-        <div className="hidden md:flex items-center gap-8">
+        {/* SEARCH BAR (DESKTOP) */}
+        <div className="search-widget">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            placeholder="SEARCH PEPTIDES & ACCESSORIES..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchSubmit}
+            className="search-input-header font-mono"
+          />
+        </div>
+
+        {/* ACTIONS (CART) */}
+        <div className="nav-actions">
+          <button className="cart-btn" onClick={() => setIsCartOpen(true)}>
+            <ShoppingCart size={26} strokeWidth={1.5} />
+            {cartCount > 0 && (
+              <span className="cart-count-badge">{cartCount}</span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* MOBILE SEARCH BAR */}
+      <div className="mobile-search-wrapper">
+        <div className="mobile-search-inner">
+          <Search size={18} className="mobile-search-icon" />
+          <input
+            type="text"
+            placeholder="SEARCH PEPTIDES..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchSubmit}
+            className="mobile-search-input font-mono"
+          />
+        </div>
+        {searchQuery && (
+          <button className="mobile-cancel-btn" onClick={handleClearSearch}>
+            <X size={24} strokeWidth={1.5} />
+          </button>
+        )}
+      </div>
+
+      {/* BOTTOM LINKS */}
+      <div
+        className={`nav-bottom-bar ${isMobileMenuOpen ? "mobile-open" : ""}`}
+      >
+        <div className="nav-links-container">
           <Link
             to="/"
-            className="text-sm font-medium text-gray-300 hover:text-[var(--primary)] transition-colors"
+            className="nav-link"
+            onClick={() => setIsMobileMenuOpen(false)}
           >
-            HOME
+            Home
           </Link>
           <Link
             to="/shop"
-            className="text-sm font-medium text-gray-300 hover:text-[var(--primary)] transition-colors"
+            className="nav-link"
+            onClick={() => setIsMobileMenuOpen(false)}
           >
-            SHOP
+            Shop All
           </Link>
           <Link
-            to="/pages/admin"
-            className="text-sm font-medium text-gray-300 hover:text-[var(--primary)] transition-colors flex items-center gap-2"
+            to="/about"
+            className="nav-link"
+            onClick={() => setIsMobileMenuOpen(false)}
           >
-            <User size={16} /> ADMIN
-          </Link>
-          <Link
-            to="/cart"
-            className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-bold"
-          >
-            <ShoppingBag size={16} /> CART
+            About Us
           </Link>
         </div>
-
-        {/* MOBILE TOGGLE */}
-        <button
-          className="md:hidden p-2 text-gray-300 hover:text-white"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
       </div>
-
-      {/* MOBILE DROPDOWN */}
-      {isOpen && (
-        <div className="md:hidden bg-[var(--baltic-sea)] border-t border-gray-800 absolute w-full left-0">
-          <div className="flex flex-col p-6 gap-4">
-            <Link
-              to="/"
-              onClick={() => setIsOpen(false)}
-              className="block text-lg font-medium text-gray-300 hover:text-[var(--primary)]"
-            >
-              Home
-            </Link>
-            <Link
-              to="/shop"
-              onClick={() => setIsOpen(false)}
-              className="block text-lg font-medium text-gray-300 hover:text-[var(--primary)]"
-            >
-              Shop
-            </Link>
-            <Link
-              to="/admin"
-              onClick={() => setIsOpen(false)}
-              className="block text-lg font-medium text-gray-300 hover:text-[var(--primary)]"
-            >
-              Admin Portal
-            </Link>
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
