@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 // --- KINETIC TEXT COMPONENT ---
 export function KineticText({ children, className = "", delay = 0 }) {
   const ref = useRef(null);
-  
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -11,7 +11,7 @@ export function KineticText({ children, className = "", delay = 0 }) {
           setTimeout(() => entry.target.classList.add("active"), delay);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
@@ -33,4 +33,9 @@ export function CurtainReveal({ src, alt, className = "" }) {
       <img src={src} alt={alt} className="w-full h-full object-cover" />
     </div>
   );
+}
+
+// --- ADD THIS DEFAULT EXPORT TO FIX THE BUILD ERROR ---
+export default function Animations() {
+  return null; // This file is a utility library, not a page component.
 }

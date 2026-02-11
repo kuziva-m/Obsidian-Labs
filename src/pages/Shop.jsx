@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useCart } from "../lib/CartContext";
 import SEO from "../components/SEO";
@@ -12,13 +12,48 @@ import {
   Check,
 } from "lucide-react";
 import "./Shop.css";
+import "../components/ProductCard.css";
+
+// 1. Define the exact order based on your note list
+const PRODUCT_ORDER = [
+  "HGH Kit (Blue Tops)",
+  "Retatrutide",
+  "Tirzepatide (Mounjaro)",
+  "Cagrilintide",
+  "GHK-Cu",
+  "BPC-157",
+  "BPC-157 + TB-500 Blend",
+  "KPV",
+  "SS-31",
+  "MOTS-c",
+  "NAD+",
+  "Thymosin Alpha-1",
+  "Selank",
+  "Semax",
+  "CJC-1295 (No DAC) + Ipamorelin",
+  "Tesamorelin",
+  "Ipamorelin",
+  "IGF-1 LR3",
+  "PT-141",
+  "AOD-9604",
+  "Melanotan 1",
+  "Melanotan 2",
+  "DSIP",
+  "Pinealon",
+  "Epitalon",
+  "Glutathione",
+  "5-amino-1mq",
+  "Oxytocin Acetate",
+  "SLU-PP-322",
+  "HCG",
+  "BAC Water",
+];
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Get active category from URL or default to "All"
   const activeCategory = searchParams.get("category") || "All";
 
   const categories = [
@@ -31,6 +66,7 @@ export default function Shop() {
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
+
       let query = supabase.from("products").select(`*, variants (*)`);
 
       if (activeCategory !== "All") {
@@ -42,13 +78,18 @@ export default function Shop() {
       if (error) {
         console.error("Error fetching products:", error);
       } else if (data) {
-        // Sort: In-stock first, then by image presence
+        // 2. Apply the custom sort logic
         const sorted = data.sort((a, b) => {
-          if (a.in_stock === b.in_stock) {
-            return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0);
-          }
-          return b.in_stock - a.in_stock;
+          const indexA = PRODUCT_ORDER.indexOf(a.name);
+          const indexB = PRODUCT_ORDER.indexOf(b.name);
+
+          // If a name isn't in our list, put it at the end
+          const finalA = indexA === -1 ? 999 : indexA;
+          const finalB = indexB === -1 ? 999 : indexB;
+
+          return finalA - finalB;
         });
+
         setProducts(sorted);
       }
       setLoading(false);
@@ -60,10 +101,7 @@ export default function Shop() {
     <div className="shop-page bg-[#f4f4f5] min-h-screen pb-20">
       <SEO title="Shop Inventory" />
 
-      {/* --- HEADER REMOVED --- */}
-
       <div className="container mx-auto px-4 mt-8 pt-24">
-        {/* --- FILTERS --- */}
         <div className="flex overflow-x-auto pb-4 gap-2 mb-8 no-scrollbar justify-center md:justify-start">
           {categories.map((cat) => (
             <button
@@ -84,7 +122,6 @@ export default function Shop() {
           ))}
         </div>
 
-        {/* --- GRID (2 Columns on Mobile) --- */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {loading
             ? [...Array(8)].map((_, i) => (
@@ -108,113 +145,119 @@ export default function Shop() {
   );
 }
 
-// --- UPDATED PRODUCT CARD (BOXIER) ---
 function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState(null);
 
-  const price = product.variants?.[0]?.price || 0;
+  const sortedVariants =
+    product?.variants?.sort(
+      (a, b) => parseFloat(a.price) - parseFloat(b.price),
+    ) || [];
+
+  useEffect(() => {
+    if (sortedVariants.length > 0) {
+      setSelectedVariant(sortedVariants[0]);
+    }
+  }, [product]);
+
   const isOutOfStock = !product.in_stock;
 
-  const handleAdd = () => {
-    if (isOutOfStock) return;
-    addToCart(product);
+  const handleAdd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isOutOfStock || !selectedVariant) return;
+
+    const itemToAdd = {
+      ...product,
+      variantId: selectedVariant.id,
+      price: parseFloat(selectedVariant.price),
+      sizeLabel: selectedVariant.size_label,
+    };
+
+    addToCart(itemToAdd);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
   return (
-    <div className="group bg-white rounded-md border-2 border-[var(--baltic-sea)] overflow-hidden flex flex-col h-full hover:shadow-[6px_6px_0px_0px_var(--baltic-sea)] transition-all duration-200 relative">
-      {/* Stock Badge - Boxier (rounded-sm) */}
-      <div className="absolute top-3 right-3 z-10">
-        <span
-          className={`
-          font-bold text-[10px] uppercase px-2 py-1 rounded-sm border border-black shadow-sm
-          ${isOutOfStock ? "bg-red-100 text-red-600" : "bg-green-100 text-green-800"}
-        `}
-        >
-          {isOutOfStock ? "Sold Out" : "In Stock"}
-        </span>
-      </div>
+    <div className="product-card group">
+      <Link
+        to={`/product/${product.id}`}
+        className="flex flex-col h-full text-inherit no-underline"
+      >
+        <div className="card-image-wrapper">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="product-img"
+            />
+          ) : (
+            <div className="no-img-placeholder">
+              <FlaskConical size={48} strokeWidth={1} />
+              <span className="font-oswald">LABS</span>
+            </div>
+          )}
 
-      {/* Image Area - FULL BLEED (No Padding) */}
-      <div className="aspect-[4/5] bg-gray-100 border-b-2 border-[var(--baltic-sea)] relative">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-            <span className="font-[Oswald] text-gray-400 text-3xl -rotate-12 opacity-50">
-              NO IMG
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Content Area */}
-      <div className="p-4 flex flex-col flex-grow">
-        <div className="mb-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded-sm">
-            {product.category}
-          </span>
+          {isOutOfStock && (
+            <div className="sold-out-overlay">
+              <span className="sold-out-tag">SOLD OUT</span>
+            </div>
+          )}
         </div>
 
-        <h3 className="font-[Oswald] text-lg uppercase leading-tight font-bold text-[var(--baltic-sea)] mb-4 line-clamp-2 min-h-[2.5rem]">
-          {product.name}
-        </h3>
-
-        {/* Short Name / REF code */}
-        {product.short_name && (
-          <p className="font-mono text-[10px] text-gray-400 mb-2">
-            REF: {product.short_name}
-          </p>
-        )}
-
-        {/* Price & Action Row - ALIGNED */}
-        <div className="mt-auto flex items-center justify-between gap-3 pt-3 border-t-2 border-dashed border-gray-200">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-gray-500 uppercase font-bold">
-              Price
-            </span>
-            <span className="font-[Oswald] text-xl font-bold text-[var(--brick-red)]">
-              ${price}
-            </span>
+        <div className="card-info">
+          <div className="card-header">
+            <span className="category-tag">{product.category}</span>
+            {product.short_name && (
+              <span className="ref-code">REF: {product.short_name}</span>
+            )}
           </div>
 
-          {/* Button - Boxier (rounded-sm) and White Text */}
-          <button
-            onClick={handleAdd}
-            disabled={isOutOfStock}
-            className={`
-              h-10 w-10 md:w-auto md:px-5 rounded-sm flex items-center justify-center gap-2 transition-all border-2 border-[var(--baltic-sea)]
-              ${
-                isOutOfStock
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                  : added
-                    ? "bg-green-600 text-white border-green-700"
-                    : "bg-[var(--baltic-sea)] text-white hover:bg-[var(--brick-red)] hover:border-[var(--brick-red)]"
-              }
-            `}
-          >
-            {isOutOfStock ? (
-              <span className="text-xs font-bold">X</span>
-            ) : added ? (
-              <Check size={18} />
-            ) : (
-              <ShoppingCart size={18} className="text-white" />
-            )}
+          <h3 className="product-name font-oswald">{product.name}</h3>
 
-            {!isOutOfStock && !added && (
-              <span className="hidden md:inline font-[Oswald] uppercase text-sm font-bold tracking-wide text-white">
-                Add
+          {sortedVariants.length > 0 && (
+            <div className="selector-row">
+              <div className="variant-pills no-scrollbar">
+                {sortedVariants.map((v) => (
+                  <button
+                    key={v.id}
+                    className={`variant-pill ${selectedVariant?.id === v.id ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedVariant(v);
+                    }}
+                  >
+                    {v.size_label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="action-row">
+            <div className="price-box">
+              <span className="price-label">PRICE</span>
+              <span className="price-value font-oswald">
+                ${selectedVariant ? selectedVariant.price : "0"}
               </span>
-            )}
-          </button>
+            </div>
+
+            <button
+              onClick={handleAdd}
+              disabled={isOutOfStock}
+              className={`add-to-cart-btn ${added ? "success" : ""} ${isOutOfStock ? "disabled" : ""}`}
+            >
+              {added ? <Check size={18} /> : <ShoppingCart size={18} />}
+              <span className="btn-text font-oswald">
+                {added ? "ADDED" : isOutOfStock ? "X" : "ADD"}
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
+      </Link>
     </div>
   );
 }

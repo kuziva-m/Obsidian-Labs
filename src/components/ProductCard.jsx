@@ -1,70 +1,134 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingCart, Check, FlaskConical } from "lucide-react";
+import { useCart } from "../lib/CartContext";
+import "./ProductCard.css";
 
-export default function ProductCard({ product }) {
-  // If product is missing or loading, show a skeleton loader
-  if (!product) {
+export default function ProductCard({ product, loading }) {
+  const { addToCart } = useCart();
+  const [added, setAdded] = useState(false);
+
+  // 1. Sort variants by price (Low to High)
+  const sortedVariants =
+    product?.variants?.sort((a, b) => a.price - b.price) || [];
+
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
+  // 2. Initialize selected variant (Default to first available)
+  useEffect(() => {
+    if (sortedVariants.length > 0) {
+      setSelectedVariant(sortedVariants[0]);
+    }
+  }, [product]);
+
+  // SKELETON LOADING STATE
+  if (loading || !product) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse h-[300px]">
-        <div className="bg-gray-200 h-40 rounded-lg mb-4"></div>
-        <div className="bg-gray-200 h-6 w-3/4 rounded mb-2"></div>
-        <div className="bg-gray-200 h-4 w-1/2 rounded"></div>
+      <div className="product-card skeleton-card">
+        <div className="skeleton-img"></div>
+        <div className="card-content-skeleton">
+          <div className="skeleton-line w-3/4"></div>
+          <div className="skeleton-line w-1/2"></div>
+          <div className="skeleton-btn-box"></div>
+        </div>
       </div>
     );
   }
 
-  // Get price from the first variant, or default to 0
-  const mainPrice =
-    product.variants && product.variants.length > 0
-      ? product.variants[0].price
-      : 0;
+  const isOutOfStock = !product.in_stock;
+
+  const handleAddToCart = (e) => {
+    e.preventDefault(); // Prevents navigating to product page when clicking buttons
+    e.stopPropagation();
+
+    if (isOutOfStock || !selectedVariant) return;
+
+    // Create a unique cart item based on the selected variant
+    const itemToAdd = {
+      ...product,
+      variantId: selectedVariant.id,
+      price: parseFloat(selectedVariant.price),
+      sizeLabel: selectedVariant.size_label,
+    };
+
+    addToCart(itemToAdd);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
 
   return (
-    <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
-      {/* Image Area */}
-      <div className="h-48 bg-gray-100 relative overflow-hidden flex items-center justify-center">
+    <div className="product-card group">
+      {/* Link the image area to the Product Page */}
+      <Link to={`/product/${product.id}`} className="card-image-wrapper">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="product-img"
           />
         ) : (
-          <div className="text-gray-300 text-4xl font-bold opacity-20">
-            LABS
+          <div className="no-img-placeholder">
+            <FlaskConical size={48} strokeWidth={1} />
+            <span className="font-oswald">LABS</span>
           </div>
         )}
 
-        {!product.in_stock && (
-          <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-            <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-              Out of Stock
-            </span>
+        {isOutOfStock && (
+          <div className="sold-out-overlay">
+            <span className="sold-out-tag">SOLD OUT</span>
           </div>
         )}
-      </div>
+      </Link>
 
-      {/* Content Area */}
-      <div className="p-5 flex flex-col flex-grow">
-        <div className="text-xs font-semibold text-[var(--brick-red)] mb-1 uppercase tracking-wider">
-          {product.category}
+      <div className="card-info">
+        <div className="card-header">
+          <span className="category-tag">{product.category}</span>
+          {product.short_name && (
+            <span className="ref-code">REF: {product.short_name}</span>
+          )}
         </div>
-        <h3 className="font-bold text-lg text-[var(--baltic-sea)] mb-2 leading-tight">
-          {product.name}
-        </h3>
 
-        <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-medium">
-              Starting at
-            </span>
-            <span className="text-lg font-bold text-[var(--baltic-sea)]">
-              ${mainPrice}
+        <h3 className="product-name font-oswald">{product.name}</h3>
+
+        {/* --- VARIANT SELECTOR ROW --- */}
+        {sortedVariants.length > 0 && (
+          <div className="selector-row">
+            <div className="variant-pills no-scrollbar">
+              {sortedVariants.map((v) => (
+                <button
+                  key={v.id}
+                  className={`variant-pill ${selectedVariant?.id === v.id ? "active" : ""}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedVariant(v);
+                  }}
+                >
+                  {v.size_label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- PRICE & ACTION --- */}
+        <div className="action-row">
+          <div className="price-box">
+            <span className="price-label">PRICE</span>
+            <span className="price-value font-oswald">
+              ${selectedVariant ? selectedVariant.price : "0"}
             </span>
           </div>
 
-          <button className="bg-[var(--baltic-sea)] text-white p-2.5 rounded-lg hover:bg-[var(--brick-red)] transition-colors group-hover:translate-x-1 duration-300">
-            <ShoppingBag size={18} />
+          <button
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className={`add-to-cart-btn ${added ? "success" : ""} ${isOutOfStock ? "disabled" : ""}`}
+          >
+            {added ? <Check size={18} /> : <ShoppingCart size={18} />}
+            <span className="btn-text font-oswald">
+              {added ? "ADDED" : isOutOfStock ? "X" : "ADD"}
+            </span>
           </button>
         </div>
       </div>

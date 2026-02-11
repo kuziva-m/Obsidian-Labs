@@ -66,50 +66,6 @@ export default function Services() {
             </Link>
           </div>
         </div>
-
-        {/* --- PART 2: CATEGORIES --- */}
-        <div className="border-t border-gray-300 pt-16">
-          <div className="flex items-center gap-4 mb-12 justify-center">
-            <h2 className="font-[Oswald] text-2xl uppercase text-gray-500 tracking-wide">
-              Lab Inventory Categories
-            </h2>
-          </div>
-
-          {/* UPDATED GRID: 2 cols on mobile, 3 on desktop */}
-          <div className="cards grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {/* CATEGORY 1: PEPTIDES */}
-            <ServiceCard
-              icon={
-                <img
-                  src="/assets/molecule.png"
-                  alt="Peptides"
-                  className="w-12 h-12 object-contain opacity-80"
-                />
-              }
-              title="Research Peptides"
-              text="High-purity synthetic peptides including GLP-1s."
-              link="/shop?category=Peptides"
-            />
-
-            {/* CATEGORY 2: BLENDS */}
-            <ServiceCard
-              icon={<Layers size={48} className="text-[var(--brick-red)]" />}
-              title="Peptide Blends"
-              text="Synergistic premixed compounds for efficiency."
-              link="/shop?category=Peptide Blends"
-            />
-
-            {/* CATEGORY 3: ACCESSORIES (HIDDEN ON MOBILE) */}
-            <div className="hidden md:block">
-              <ServiceCard
-                icon={<Syringe size={48} className="text-[var(--brick-red)]" />}
-                title="Lab Supplies"
-                text="Essential research accessories & sterile equipment."
-                link="/shop?category=Accessories"
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

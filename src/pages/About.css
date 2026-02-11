@@ -1,207 +1,335 @@
-/* --- CONTAINER & LAYOUT --- */
-.about-container {
+/* --- GLOBAL PAGE RESETS --- */
+.page-wrapper {
   background-color: #ffffff;
-  color: #222;
-  font-family: "Inter", sans-serif;
-  padding-bottom: 0;
+  color: #1b1b1b;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .container {
-  max-width: 900px; /* Reading width */
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
+}
+
+.text-red {
+  color: #ce2a34;
 }
 
 /* --- HERO SECTION --- */
-.about-hero {
-  padding: 80px 0 60px;
-  text-align: center;
+.about-hero-section {
+  background-color: #1b1b1b; /* Dark Obsidian */
+  color: #ffffff;
+  padding: 120px 0 100px;
+  position: relative;
+  overflow: hidden;
 }
 
-.about-title {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #111;
-  margin-bottom: 10px;
-  line-height: 1.1;
+.hero-bg-pattern {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  background-image: radial-gradient(circle, #2a2a2a 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.hero-label {
+  display: block;
+  font-family: "Oswald", sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: #ce2a34;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.hero-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 4rem;
+  line-height: 1;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 30px;
   letter-spacing: -0.02em;
 }
 
-.about-subtitle {
-  font-size: 1.25rem;
-  color: var(--red); /* Obsidian Red */
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.hero-divider {
+  width: 60px;
+  height: 4px;
+  background-color: #ce2a34;
   margin-bottom: 30px;
 }
 
-.about-divider {
-  height: 4px;
-  width: 80px;
-  background: var(--red);
-  margin: 0 auto 30px;
+.hero-text {
+  font-family: monospace; /* Technical feel */
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #a0a0a0;
+  max-width: 600px;
 }
 
-.about-lead {
-  font-size: 1.2rem;
-  line-height: 1.6;
-  color: #444;
-  margin-bottom: 20px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* --- GENERAL SECTIONS --- */
-.about-section {
+/* --- MISSION STRIP --- */
+.mission-section {
+  background-color: #ffffff;
   padding: 80px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.bg-gray {
-  background-color: #f9fafb; /* Light grey background for contrast */
+.mission-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 
 .section-heading {
-  font-size: 2rem;
+  font-family: "Oswald", sans-serif;
+  font-size: 2.5rem;
+  text-transform: uppercase;
+  color: #1b1b1b;
   font-weight: 700;
-  color: #111;
-  margin-bottom: 30px;
-  position: relative;
+  margin: 0;
 }
 
-.section-heading.text-center {
-  text-align: center;
+.mission-statement {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: #1b1b1b;
+  font-weight: 300;
 }
 
-.about-text {
-  font-size: 1.05rem;
-  line-height: 1.8;
-  color: #555;
-  margin-bottom: 20px;
-}
-
-.font-bold {
+.highlight {
   font-weight: 700;
-  color: #111;
+  color: #ce2a34;
 }
 
-/* --- VALUES GRID --- */
+/* --- VALUES SECTION (Dark Mode) --- */
+.values-section {
+  background-color: #111111;
+  color: #ffffff;
+  padding: 100px 0;
+}
+
+.values-section .section-heading {
+  color: #ffffff;
+}
+
 .values-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 40px;
-  margin-top: 50px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
 }
 
 .value-card {
-  text-align: center;
-  padding: 30px;
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  background: #1b1b1b;
+  padding: 40px 30px;
+  border: 1px solid #333;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .value-card:hover {
+  border-color: #ce2a34;
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  border-color: var(--red);
 }
 
-.value-icon {
-  color: var(--red);
-  margin-bottom: 20px;
+.icon-box {
+  width: 60px;
+  height: 60px;
+  background: rgba(206, 42, 52, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ce2a34;
+  margin-bottom: 25px;
+  border-radius: 4px;
 }
 
 .value-card h3 {
+  font-family: "Oswald", sans-serif;
   font-size: 1.25rem;
-  font-weight: 700;
+  text-transform: uppercase;
   margin-bottom: 15px;
-  color: #111;
+  letter-spacing: 0.05em;
 }
 
 .value-card p {
-  font-size: 0.95rem;
-  color: #666;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #888;
   line-height: 1.6;
 }
 
-/* --- COMMITMENT BOX --- */
-.commitment-box {
-  background: #111; /* Dark Obsidian Box */
-  color: white;
-  padding: 50px;
-  border-radius: 16px;
-  border-left: 6px solid var(--red);
+/* --- STORY SECTION --- */
+.story-section {
+  padding: 100px 0;
+  background-color: #fff;
 }
 
-.commitment-box .section-heading {
-  color: white;
+.story-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.story-body p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 20px;
 }
 
 .commitment-list {
-  list-style: none;
-  padding: 0;
-  margin: 30px 0;
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.commitment-list li {
-  padding: 10px 0;
-  font-size: 1.1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.c-item {
   display: flex;
   align-items: center;
+  gap: 15px;
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1b1b1b;
 }
 
-.commitment-list li::before {
-  content: "✓";
-  color: var(--red);
-  font-weight: bold;
-  margin-right: 15px;
+/* Abstract Molecule Visual */
+.story-visual {
+  height: 300px;
+  background: #f4f4f5;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.commitment-box .about-text {
-  color: #ccc;
+.visual-inner {
+  position: relative;
+  width: 200px;
+  height: 200px;
 }
 
-/* --- FOOTER CTA --- */
-.about-footer {
-  background: var(--red);
+.molecule-node {
+  width: 40px;
+  height: 40px;
+  background: #1b1b1b;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 2;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.molecule-node.n1 {
+  top: 20px;
+  left: 80px;
+  background: #ce2a34;
+}
+.molecule-node.n2 {
+  bottom: 40px;
+  left: 20px;
+}
+.molecule-node.n3 {
+  bottom: 40px;
+  right: 20px;
+}
+
+.molecule-link {
+  position: absolute;
+  background: #ccc;
+  height: 2px;
+  z-index: 1;
+}
+
+.molecule-link.l1 {
+  width: 100px;
+  top: 80px;
+  left: 30px;
+  transform: rotate(60deg);
+}
+.molecule-link.l2 {
+  width: 100px;
+  top: 80px;
+  right: 30px;
+  transform: rotate(-60deg);
+}
+
+/* --- CTA SECTION --- */
+.cta-section {
+  background-color: #ce2a34;
   padding: 80px 0;
   color: white;
+  text-align: center;
 }
 
-.contact-link {
+.cta-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 3rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.cta-text {
+  font-family: monospace;
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+  opacity: 0.9;
+}
+
+.cta-btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: white;
-  color: var(--red);
-  padding: 15px 30px;
-  border-radius: 50px;
+  background: #1b1b1b;
+  color: #ffffff;
+  padding: 15px 40px;
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
   font-weight: 700;
+  letter-spacing: 0.1em;
   text-decoration: none;
-  margin-top: 30px;
-  transition: transform 0.2s ease;
+  transition: all 0.3s ease;
 }
 
-.contact-link:hover {
-  transform: scale(1.05);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+.cta-btn:hover {
+  background: #ffffff;
+  color: #1b1b1b;
 }
 
 /* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-  .about-title {
-    font-size: 2.2rem;
+@media (min-width: 768px) {
+  .mission-grid {
+    flex-direction: row;
+    align-items: center;
   }
-  .values-grid {
-    grid-template-columns: 1fr;
+  .mission-left {
+    flex: 0 0 300px;
   }
-  .commitment-box {
-    padding: 30px;
+
+  .story-wrapper {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  .mission-statement {
+    font-size: 1.2rem;
+  }
+  .section-heading {
+    font-size: 2rem;
   }
 }

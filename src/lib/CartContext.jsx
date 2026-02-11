@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 const CartContext = createContext();
 
-// 1. Export the Provider
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -18,12 +17,15 @@ export function CartProvider({ children }) {
     localStorage.setItem("obsidian_cart", JSON.stringify(cart));
   }, [cart]);
 
+  // FIXED: Identify items by variantId instead of product.id
   const addToCart = (product, quantity = 1) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find(
+        (item) => item.variantId === product.variantId,
+      );
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
+          item.variantId === product.variantId
             ? { ...item, quantity: item.quantity + quantity }
             : item,
         );
@@ -33,23 +35,26 @@ export function CartProvider({ children }) {
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId) => {
-    setCart((prev) => prev.filter((item) => item.id !== productId));
+  const removeFromCart = (variantId) => {
+    setCart((prev) => prev.filter((item) => item.variantId !== variantId));
   };
 
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = (variantId, newQuantity) => {
     if (newQuantity < 1) return;
     setCart((prev) =>
       prev.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item,
+        item.variantId === variantId
+          ? { ...item, quantity: newQuantity }
+          : item,
       ),
     );
   };
 
   const clearCart = () => setCart([]);
 
+  // Use the price specifically passed with the variant
   const cartTotal = cart.reduce(
-    (total, item) => total + (item.variants?.[0]?.price || 0) * item.quantity,
+    (total, item) => total + (item.price || 0) * item.quantity,
     0,
   );
 
@@ -71,7 +76,6 @@ export function CartProvider({ children }) {
   );
 }
 
-// 2. Export the Hook (Crucial for the error you are seeing)
 export function useCart() {
   return useContext(CartContext);
 }

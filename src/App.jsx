@@ -1,6 +1,7 @@
-import { Routes, Route, useLocation } from "react-router-dom"; // Import useLocation
+import { Routes, Route, useLocation } from "react-router-dom";
+import AgeVerification from "./components/AgeVerification";
 import Navbar from "./components/Navbar";
-import Footer from "./components/Footer"; // Assuming you have this
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import ProductPage from "./pages/ProductPage";
@@ -9,23 +10,24 @@ import Checkout from "./pages/Checkout";
 import Success from "./pages/Success";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import CartDrawer from "./components/CartDrawer";
+import FAQ from "./pages/FAQ";
 
 function App() {
-  const location = useLocation(); // Get current route
+  const location = useLocation();
 
-  // Define routes where the Footer (and maybe Navbar) should be HIDDEN
   const hideLayoutRoutes = ["/admin", "/success"];
 
-  // Check if the current path starts with any of the hidden routes
   const isHiddenRoute = hideLayoutRoutes.some((route) =>
     location.pathname.startsWith(route),
   );
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Conditionally Render Navbar (Optional: Keep it if you want Navbar on Admin) */}
+      <AgeVerification /> {/* Add this here */}
+      <CartDrawer />
       {!isHiddenRoute && <Navbar />}
-
       <div className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -35,11 +37,11 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/success" element={<Success />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/faq" element={<FAQ />} />
         </Routes>
       </div>
-
-      {/* Conditionally Render Footer */}
       {!isHiddenRoute && <Footer />}
     </div>
   );

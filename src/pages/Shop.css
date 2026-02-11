@@ -1,11 +1,9 @@
-/* Ensure these variables match your Home.css / index.css */
 :root {
-  --baltic-sea: #1b1b1b; /* Dark, almost black */
-  --brick-red: #ce2a34; /* The industrial red accent */
+  --baltic-sea: #1b1b1b;
+  --brick-red: #ce2a34;
   --text-muted: #64748b;
 }
 
-/* Custom Scrollbar for Filters if needed */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -14,19 +12,18 @@
   scrollbar-width: none;
 }
 
-/* Base styles to ensure Oswald loads if Tailwind misses it */
 .font-oswald {
   font-family: "Oswald", sans-serif;
 }
 
 /* --- NAVBAR CLEARANCE FIX --- */
-/* Target the main container inside .shop-page and force top padding */
+/* FIXED: Reduced clearance to sit tighter against the sticky navbar */
 .shop-page > .container {
-  padding-top: 200px !important; /* Mobile: Push down significantly */
+  padding-top: 40px !important;
 }
 
 @media (min-width: 768px) {
   .shop-page > .container {
-    padding-top: 260px !important; /* Desktop: Push down even more */
+    padding-top: 60px !important;
   }
 }

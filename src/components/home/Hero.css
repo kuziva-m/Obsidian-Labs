@@ -1,181 +1,57 @@
 /* src/components/home/Hero.css */
 
-.hero-section {
-  position: relative;
-  min-height: 85vh;
+.hero-wrapper {
   background-color: var(--baltic-sea);
   display: flex;
-  align-items: center;
-  overflow: hidden;
-  border-bottom: 4px solid var(--brick-red);
-
-  /* UPDATED: Added significant top padding to clear the navbar */
-  padding-top: 100px;
-  padding-bottom: 60px;
+  flex-direction: column;
 }
 
-/* Subtle Grid Background */
-.hero-grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  z-index: 0;
-  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+/* --- THE IMAGE FRAME --- */
+.hero-visual-frame {
+  width: 100%;
+  height: 80vh;
+  background-image: url("/assets/hero-bg.jpeg");
+  /* FIXED: Use 'contain' on desktop to ensure nothing is cut off */
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Match the background color to the image's dark areas for seamless sides */
+  background-color: #050505;
+  border-bottom: 4px solid var(--brick-red);
+}
+
+/* --- THE CONTENT SECTION --- */
+.hero-info-section {
+  padding: 80px 0;
+  background-color: var(--baltic-sea);
+  position: relative;
 }
 
 /* Typography */
 .hero-title {
   font-family: "Oswald", sans-serif;
-  /* UPDATED: Slightly smaller on mobile to prevent crowding */
-  font-size: clamp(2.2rem, 5vw, 5rem);
+  font-size: clamp(2.5rem, 8vw, 6rem);
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.1;
   color: white;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
+  margin-bottom: 24px;
 }
 
-.text-outline {
-  color: transparent;
-  -webkit-text-stroke: 1px white;
-  opacity: 0.8;
-}
-
-@media (min-width: 1024px) {
-  .text-outline {
-    -webkit-text-stroke: 2px white;
+/* --- MOBILE & TABLET ADJUSTMENTS --- */
+@media (max-width: 1024px) {
+  .hero-visual-frame {
+    height: 60vh;
+    /* Maintain 'cover' for mobile since you mentioned it looks perfect there */
+    background-size: cover;
+    background-position: 75% center;
   }
-}
 
-.hero-desc {
-  font-family: monospace;
-  font-size: 1rem;
-  color: #a1a1aa;
-  max-width: 600px;
-  line-height: 1.6;
-}
-
-/* Specs Grid Items */
-.spec-item {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #333;
-  padding-right: 1rem;
-}
-.spec-item:last-child {
-  border-right: none;
-}
-
-.spec-label {
-  font-family: monospace;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: #666;
-  margin-bottom: 4px;
-}
-
-.spec-value {
-  font-family: "Oswald", sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-}
-
-/* Buttons */
-.btn-hero-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--brick-red);
-  color: white;
-  font-family: "Oswald", sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 16px 32px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.5);
-  text-align: center;
-}
-
-.btn-hero-primary:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 0.5);
-  background-color: #b91c25;
-}
-
-.btn-hero-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: transparent;
-  color: white;
-  border: 2px solid white;
-  font-family: "Oswald", sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 14px 30px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  text-align: center;
-}
-
-.btn-hero-secondary:hover {
-  background-color: white;
-  color: var(--baltic-sea);
-}
-
-/* Animations */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
+  .hero-title {
+    font-size: 3rem;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
 
-@keyframes reverse-spin {
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
-}
-
-.animate-reverse-spin {
-  animation: reverse-spin 25s linear infinite;
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Mobile Adjustments for smoother spacing */
-@media (max-width: 640px) {
-  .hero-section {
-    padding-top: 80px; /* Specific mobile top padding */
-    min-height: auto; /* Allow content to dictate height on small screens */
+  .hero-info-section {
+    padding: 40px 0;
   }
 }

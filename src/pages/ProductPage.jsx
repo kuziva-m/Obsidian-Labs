@@ -1,78 +1,74 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Loader2, ShoppingCart, Check } from "lucide-react";
+import { useCart } from "../lib/CartContext";
+import {
+  Loader2,
+  ShoppingCart,
+  ArrowLeft,
+  ShieldCheck,
+  Truck,
+  FlaskConical,
+} from "lucide-react";
+import SEO from "../components/SEO";
 
 export default function ProductPage() {
-  const { slug } = useParams(); // Get the product ID or Slug from URL
+  const { slug } = useParams(); // This is the product ID passed from Shop.jsx
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [variants, setVariants] = useState([]);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
-    async function fetchProduct() {
+    async function fetchProductData() {
       setLoading(true);
 
-      // 1. Try to fetch by ID (if slug is UUID)
-      let { data, error } = await supabase
+      // Fetch product and its variants in one go
+      const { data, error } = await supabase
         .from("products")
         .select(`*, variants(*)`)
-        .eq("id", slug) // Assuming the URL uses ID for now
+        .eq("id", slug)
         .single();
-
-      // 2. If valid UUID failed or slug isn't UUID, you might search by name/slug column if you have one
-      // For now, we assume the link passed the ID.
 
       if (error) {
         console.error("Error fetching product:", error);
       } else {
         setProduct(data);
+        setVariants(data.variants || []);
+        // Default to the first variant (usually the lowest strength/price)
         if (data.variants && data.variants.length > 0) {
-          setSelectedVariant(data.variants[0]); // Select first variant by default
+          setSelectedVariant(data.variants[0]);
         }
       }
       setLoading(false);
     }
 
-    fetchProduct();
+    fetchProductData();
   }, [slug]);
 
-  const addToCart = () => {
+  const handleAddToCart = () => {
     if (!product || !selectedVariant) return;
 
-    // Get existing cart
-    const existingCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    // We pass a modified product object to the cart that includes the selected variant's price and size
+    const productWithVariant = {
+      ...product,
+      name: `${product.name} (${selectedVariant.size_label})`,
+      price: parseFloat(selectedVariant.price),
+      variantId: selectedVariant.id,
+      // Overwrite variants array to ensure the cart calculates price based on THIS selection
+      variants: [selectedVariant],
+    };
 
-    // Check if item exists
-    const existingItemIndex = existingCart.findIndex(
-      (item) => item.variantId === selectedVariant.id,
-    );
-
-    if (existingItemIndex > -1) {
-      existingCart[existingItemIndex].quantity += 1;
-    } else {
-      existingCart.push({
-        id: product.id,
-        name: product.name,
-        variantId: selectedVariant.id,
-        price: selectedVariant.price,
-        image: product.image_url,
-        quantity: 1,
-        variants: [selectedVariant], // Store variant info for checkout
-      });
-    }
-
-    // Save back
-    localStorage.setItem("cart", JSON.stringify(existingCart));
-
-    // Dispatch event so Navbar updates count
-    window.dispatchEvent(new Event("storage"));
-    alert("Added to cart!");
+    addToCart(productWithVariant);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f4f4f5]">
+      <div className="min-h-screen flex items-center justify-center bg-[#050505]">
         <Loader2 className="animate-spin text-[#ce2a34]" size={32} />
       </div>
     );
@@ -80,76 +76,161 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold text-gray-400">Product Not Found</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white">
+        <h1 className="font-[Oswald] text-3xl mb-4 text-gray-500 uppercase tracking-widest">
+          Product Not Found
+        </h1>
+        <Link
+          to="/shop"
+          className="text-[#ce2a34] font-mono hover:underline flex items-center gap-2"
+        >
+          <ArrowLeft size={16} /> Return to Shop
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white pt-24 pb-12 px-4">
-      <div className="container mx-auto max-w-6xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* LEFT: IMAGE */}
-          <div className="bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center min-h-[400px]">
-            {product.image_url ? (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="text-gray-400 font-bold text-xl">NO IMAGE</div>
-            )}
+    <div className="min-h-screen bg-[#050505] text-white pt-32 pb-20">
+      <SEO title={`${product.name} - Obsidian Labs`} />
+
+      <div className="container mx-auto px-4">
+        {/* Breadcrumb */}
+        <Link
+          to="/shop"
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-[#ce2a34] transition-colors mb-12 font-mono text-sm uppercase tracking-widest"
+        >
+          <ArrowLeft size={16} /> Back to Inventory
+        </Link>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          {/* --- LEFT: PRODUCT IMAGE --- */}
+          <div className="relative group">
+            <div className="aspect-square bg-[#121212] border border-[#27272a] rounded-xl overflow-hidden flex items-center justify-center shadow-2xl">
+              {product.image_url ? (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-4 text-gray-700">
+                  <FlaskConical size={64} strokeWidth={1} />
+                  <span className="font-[Oswald] text-xl opacity-50 uppercase tracking-widest">
+                    No Image Available
+                  </span>
+                </div>
+              )}
+            </div>
+            {/* Status Badge */}
+            <div className="absolute top-6 left-6">
+              <span
+                className={`px-4 py-2 rounded-md font-bold text-xs uppercase tracking-widest border ${
+                  product.in_stock
+                    ? "bg-green-500/10 text-green-500 border-green-500/20"
+                    : "bg-red-500/10 text-red-500 border-red-500/20"
+                }`}
+              >
+                {product.in_stock ? "Available" : "Out of Stock"}
+              </span>
+            </div>
           </div>
 
-          {/* RIGHT: DETAILS */}
-          <div className="flex flex-col justify-center">
-            <h1 className="font-[Oswald] text-4xl uppercase text-[#1b1b1b] mb-2">
+          {/* --- RIGHT: PRODUCT INFO --- */}
+          <div className="flex flex-col">
+            <span className="text-[#ce2a34] font-mono text-sm tracking-[0.3em] uppercase mb-2">
+              {product.category}
+            </span>
+            <h1 className="font-[Oswald] text-5xl md:text-6xl uppercase leading-tight mb-4 tracking-tight">
               {product.name}
             </h1>
-            <div className="h-1 w-20 bg-[#ce2a34] mb-6"></div>
+            <div className="h-1 w-24 bg-[#ce2a34] mb-8"></div>
 
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              {product.description || "No description available."}
-            </p>
-
-            {/* Price */}
-            <div className="text-3xl font-bold text-[#ce2a34] mb-8 font-mono">
-              ${selectedVariant ? selectedVariant.price.toFixed(2) : "0.00"}
+            <div className="text-4xl font-[Oswald] text-white mb-8 flex items-baseline gap-2">
+              <span className="text-gray-500 text-2xl font-mono">$</span>
+              {selectedVariant ? selectedVariant.price : "0.00"}
+              <span className="text-gray-500 text-sm font-mono uppercase ml-2 tracking-widest">
+                AUD
+              </span>
             </div>
 
-            {/* Variant Selector (if multiple) */}
-            {product.variants && product.variants.length > 1 && (
-              <div className="mb-8">
-                <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
-                  Select Option
+            <p className="text-gray-400 text-lg leading-relaxed mb-10 font-light max-w-xl">
+              {product.description ||
+                "Research-grade compound manufactured to the highest purity standards. Intended strictly for laboratory research use."}
+            </p>
+
+            {/* STRENGTH / SIZE SELECTOR */}
+            {variants.length > 1 && (
+              <div className="mb-10">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">
+                  Select Strength
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {product.variants.map((v) => (
+                <div className="flex flex-wrap gap-3">
+                  {variants.map((v) => (
                     <button
                       key={v.id}
                       onClick={() => setSelectedVariant(v)}
-                      className={`px-4 py-2 border rounded text-sm font-bold uppercase transition-all ${
+                      className={`px-6 py-3 border rounded-lg font-[Oswald] uppercase tracking-widest text-sm transition-all duration-300 ${
                         selectedVariant?.id === v.id
-                          ? "bg-[#1b1b1b] text-white border-[#1b1b1b]"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                          ? "bg-[#ce2a34] border-[#ce2a34] text-white shadow-[0_0_20px_rgba(206,42,52,0.3)]"
+                          : "bg-transparent border-[#27272a] text-gray-500 hover:border-gray-400 hover:text-white"
                       }`}
                     >
-                      {v.size_label || "Standard"}
+                      {v.size_label}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* ACTION BUTTON */}
             <button
-              onClick={addToCart}
-              className="w-full md:w-auto bg-[#ce2a34] text-white py-4 px-8 rounded font-[Oswald] uppercase tracking-widest hover:bg-[#1b1b1b] transition-colors flex items-center justify-center gap-3"
+              onClick={handleAddToCart}
+              disabled={!product.in_stock}
+              className={`group relative w-full md:w-auto px-12 py-5 rounded-lg font-[Oswald] uppercase tracking-[0.2em] text-lg transition-all flex items-center justify-center gap-4 ${
+                added
+                  ? "bg-green-600 text-white"
+                  : "bg-white text-black hover:bg-[#ce2a34] hover:text-white"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              <ShoppingCart size={20} />
-              Add to Cart
+              <ShoppingCart
+                size={20}
+                className={added ? "animate-bounce" : ""}
+              />
+              <span>
+                {added
+                  ? "Item Added"
+                  : product.in_stock
+                    ? "Add to Research"
+                    : "Sold Out"}
+              </span>
             </button>
+
+            {/* TRUST BADGES */}
+            <div className="mt-12 pt-12 border-t border-[#27272a] grid grid-cols-2 gap-8">
+              <div className="flex items-start gap-4">
+                <ShieldCheck className="text-[#ce2a34] shrink-0" size={24} />
+                <div>
+                  <h4 className="font-[Oswald] uppercase text-sm tracking-widest mb-1">
+                    Purity Verified
+                  </h4>
+                  <p className="text-xs text-gray-500 font-mono">
+                    99%+ HPLC Analysis
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <Truck className="text-[#ce2a34] shrink-0" size={24} />
+                <div>
+                  <h4 className="font-[Oswald] uppercase text-sm tracking-widest mb-1">
+                    Discreet Logistics
+                  </h4>
+                  <p className="text-xs text-gray-500 font-mono">
+                    Secure Express Shipping
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

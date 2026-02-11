@@ -4,7 +4,6 @@ import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 
-// --- FIXED: Moved Component Outside ---
 const InputField = ({
   label,
   name,
@@ -47,7 +46,6 @@ export default function Checkout() {
     country: "Australia",
   });
 
-  // Shipping Logic
   const isFreeShipping = cartTotal > 239.99;
   const shippingCost = isFreeShipping ? 0 : 14.99;
   const finalTotal = cartTotal + shippingCost;
@@ -195,16 +193,19 @@ export default function Checkout() {
               </div>
               {cart.map((item) => (
                 <div
-                  key={item.id}
+                  /* FIXED: Use variantId as the key */
+                  key={item.variantId}
                   className="flex justify-between border-b border-gray-700 pb-3 text-white"
                 >
-                  <span>
-                    {item.name}{" "}
-                    <span className="text-gray-400">x {item.quantity}</span>
+                  <span className="flex flex-col">
+                    <span className="font-bold">{item.name}</span>
+                    {/* FIXED: Show the specific strength/size */}
+                    <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
+                      Strength: {item.sizeLabel || "Standard"} x {item.quantity}
+                    </span>
                   </span>
-                  <span>
-                    ${(item.variants[0].price * item.quantity).toFixed(2)}
-                  </span>
+                  {/* FIXED: Use item.price (variant-specific) instead of item.variants[0] */}
+                  <span>${(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
