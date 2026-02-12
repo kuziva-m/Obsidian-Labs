@@ -3,26 +3,33 @@
 
 :root {
   /* --- THEME COLORS --- */
-  --baltic-sea: #1b1b1b; /* Dark Charcoal */
-  --brick-red: #ce2a34; /* Industrial Red */
-  --off-white: #f4f4f5;
+  --baltic-sea: #1b1b1b;
+  --brick-red: #ce2a34;
+  --bg-surface: #ffffff;
+  --text-main: #1b1b1b;
   --text-muted: #64748b;
+  --line: #e2e8f0;
 
-  /* --- GLOBAL FONTS --- */
+  /* --- TYPOGRAPHY SYSTEM --- */
+  /* Oswald for Headings, Data, Buttons */
   --font-heading: "Oswald", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-body: system-ui, -apple-system, sans-serif;
+
+  /* Inter/System for Body Text (No more Monospace/Manrope) */
+  --font-body:
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 }
 
 body {
   margin: 0;
-  background-color: var(--off-white);
-  color: var(--baltic-sea);
+  background-color: var(--bg-surface);
+  color: var(--text-main);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
 }
 
-/* HEADINGS: Force Industrial Look */
+/* --- FORCE UNIFIED HEADINGS --- */
 h1,
 h2,
 h3,
@@ -31,225 +38,16 @@ h5,
 h6 {
   font-family: var(--font-heading);
   text-transform: uppercase;
-  letter-spacing: 0.05em; /* Slight tracking for that premium feel */
-}
-
-/* UTILITIES */
-.font-oswald {
-  font-family: var(--font-heading);
-}
-.font-mono {
-  font-family: var(--font-mono);
-}
-:root {
-  /* --- DARK THEME VARIABLES --- */
-  --bg: #050505; /* Deep Black */
-  --panel: #121212; /* Dark Card Background */
-  --text: #ffffff; /* White Text */
-  --muted: #a3a3a3; /* Grey Text */
-  --line: #27272a; /* Dark Borders */
-
-  --red: #ce2a34; /* Obsidian Red */
-  --red-glow: rgba(206, 42, 52, 0.5);
-
-  --radius: 12px;
-  --container: 1200px;
-}
-
-* {
-  box-sizing: border-box;
-}
-html,
-body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background-color: var(--bg);
-  color: var(--text);
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    sans-serif;
-  line-height: 1.6;
-}
-
-.page {
-  min-height: 100%;
-}
-
-/* --- UTILS --- */
-.container {
-  width: min(var(--container), 100% - 2rem);
-  margin: 0 auto;
-}
-
-/* --- GLOBAL HEADER (Navbar) --- */
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(5, 5, 5, 0.85); /* Dark Glass */
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-}
-.topbar__inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 80px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: white;
-}
-.brand__logo {
-  height: 40px;
-}
-.brand__text {
-  line-height: 1;
-}
-.brand__name {
-  font-weight: 800;
   letter-spacing: 0.05em;
-  font-size: 1.1rem;
-}
-.brand__sub {
-  font-size: 0.7rem;
-  color: var(--red);
-  letter-spacing: 0.3em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.nav {
-  display: flex;
-  gap: 32px;
-}
-.nav__link {
-  text-decoration: none;
-  color: var(--muted);
-  font-weight: 500;
-  transition: color 0.2s;
-}
-.nav__link:hover {
-  color: white;
+/* --- UTILITIES --- */
+.font-oswald {
+  font-family: var(--font-heading) !important;
 }
 
-.topbar__actions {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-.iconBtn {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: white;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.iconBtn:hover {
-  border-color: var(--red);
-  color: var(--red);
-}
-
-/* --- GLOBAL BUTTONS --- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-.btn--primary {
-  background: white;
-  color: black;
-}
-.btn--primary:hover {
-  background: #e5e5e5;
-}
-
-.btn--cta {
-  background: var(--red);
-  color: white;
-  box-shadow: 0 4px 20px var(--red-glow);
-  font-size: 1.1rem;
-  padding: 16px 32px;
-}
-.btn--cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px var(--red-glow);
-}
-
-/* --- GLOBAL FOOTER --- */
-.footer {
-  background: black;
-  border-top: 1px solid var(--line);
-  padding: 80px 0 40px;
-  color: var(--muted);
-}
-.footer__inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 60px;
-}
-.footer__logo {
-  height: 50px;
-}
-.footer__links a {
-  color: var(--muted);
-  text-decoration: none;
-  margin: 0 15px;
-  transition: 0.2s;
-}
-.footer__links a:hover {
-  color: white;
-}
-.social {
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-decoration: none;
-  transition: 0.2s;
-}
-.social:hover {
-  background: var(--red);
-  border-color: var(--red);
-}
-.footer__bottom {
-  text-align: center;
-  font-size: 0.8rem;
-  border-top: 1px solid var(--line);
-  padding-top: 30px;
-}
-
-/* Responsive Globals */
-@media (max-width: 900px) {
-  .nav {
-    display: none;
-  }
-  .footer__inner {
-    flex-direction: column;
-    gap: 30px;
-  }
+/* Replaces old font-mono with standard body font or Oswald */
+.font-body {
+  font-family: var(--font-body) !important;
 }

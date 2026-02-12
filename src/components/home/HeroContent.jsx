@@ -7,17 +7,17 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
-import "./HeroContent.css"; // UPDATED IMPORT
+import "./HeroContent.css";
 
 export default function HeroContent() {
   return (
     <section className="shipping-hero-section">
       {/* --- BACKGROUND DECORATION --- */}
       <div className="shipping-bg-layer">
-        <Truck className="ship-icon pos-a" size={140} />
-        <Package className="ship-icon pos-b" size={100} />
-        <MapPin className="ship-icon pos-c" size={120} />
-        <ShieldCheck className="ship-icon pos-d" size={80} />
+        <Truck className="ship-icon pos-a" size={140} strokeWidth={1} />
+        <Package className="ship-icon pos-b" size={100} strokeWidth={1} />
+        <MapPin className="ship-icon pos-c" size={120} strokeWidth={1} />
+        <ShieldCheck className="ship-icon pos-d" size={80} strokeWidth={1} />
       </div>
 
       <div className="container mx-auto px-4 relative z-20">
@@ -25,13 +25,11 @@ export default function HeroContent() {
           {/* TOP TAG */}
           <div className="shipping-priority-tag">
             <Zap size={14} fill="white" />
-            <span className="font-mono text-[10px] tracking-[0.3em]">
-              PRIORITY LOGISTICS
-            </span>
+            <span>PRIORITY LOGISTICS</span>
           </div>
 
           {/* MAIN TITLES */}
-          <h1 className="shipping-main-title font-oswald">
+          <h1 className="shipping-main-title">
             AUSTRALIA WIDE <br />
             <span className="text-red-accent">EXPRESS DISPATCH</span>
           </h1>
@@ -63,10 +61,10 @@ export default function HeroContent() {
 
           {/* ACTION BUTTONS */}
           <div className="shipping-action-group">
-            <Link to="/shop" className="ship-btn-primary font-oswald">
+            <Link to="/shop" className="ship-btn-primary">
               Access Inventory
             </Link>
-            <Link to="/faq" className="ship-btn-secondary font-oswald">
+            <Link to="/faq" className="ship-btn-secondary">
               Shipping Policy <ArrowRight size={18} />
             </Link>
           </div>

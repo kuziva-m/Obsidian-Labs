@@ -39,6 +39,7 @@ serve(async (req: Request) => {
       return item.variants[0].id;
     });
 
+    // FIX: Ensure we select all columns (*) so we get 'size_label'
     const { data: dbVariants, error: dbError } = await supabaseClient
       .from("variants")
       .select(`*, products(name, short_name)`)
@@ -52,7 +53,7 @@ serve(async (req: Request) => {
     for (const item of items as CartItem[]) {
       const variantId = item.variants[0].id;
       const dbItem = dbVariants?.find(
-        (v: { id: string }) => v.id === variantId,
+        (v: { id: string }) => v.id == variantId, // Loose equality in case of string/int mismatch
       );
 
       if (!dbItem) continue;
@@ -60,11 +61,15 @@ serve(async (req: Request) => {
       const itemTotal = dbItem.price * item.quantity;
       subtotal += itemTotal;
 
+      // FIX: Use 'size_label' from your schema instead of 'size'
+      const variantName = dbItem.size_label || "Standard";
+      const fullProductName = `${dbItem.products.name} (${variantName})`;
+
       orderItems.push({
         variant_id: dbItem.id,
         quantity: item.quantity,
         price_at_purchase: dbItem.price,
-        product_name: dbItem.products.name,
+        product_name: fullProductName, // This ensures the email has the right name
         total: itemTotal,
       });
     }
@@ -91,11 +96,13 @@ serve(async (req: Request) => {
     if (orderError) throw orderError;
 
     // 3. Save Order Items
+    // FIX: Include 'product_name_snapshot' so the database remembers exactly what was bought
     const dbItemsPayload = orderItems.map(
-      ({ variant_id, quantity, price_at_purchase }) => ({
+      ({ variant_id, quantity, price_at_purchase, product_name }) => ({
         variant_id,
         quantity,
         price_at_purchase,
+        product_name_snapshot: product_name, // Saving the full name with variant to DB
         order_id: order.id,
       }),
     );
@@ -105,12 +112,14 @@ serve(async (req: Request) => {
       .insert(dbItemsPayload);
     if (itemsError) throw itemsError;
 
-    // 4. Send Styled Email
+    // 4. Send Email
     const productRows = orderItems
       .map(
         (item) => `
       <tr style="border-bottom: 1px solid #e5e7eb;">
-        <td style="padding: 12px 0; color: #111; font-weight: 500;">${item.product_name}</td>
+        <td style="padding: 12px 0; color: #111; font-weight: 500;">
+           ${item.product_name} 
+        </td>
         <td style="padding: 12px 0; text-align: center; color: #666;">${item.quantity}</td>
         <td style="padding: 12px 0; text-align: right; color: #111;">$${item.price_at_purchase.toFixed(2)}</td>
       </tr>
@@ -118,7 +127,6 @@ serve(async (req: Request) => {
       )
       .join("");
 
-    const date = new Date(order.created_at).toLocaleDateString("en-AU");
     const logoUrl = "https://obsidianlabs-au.com/assets/obsidian-logo-red.png";
 
     const emailHtml = `
@@ -140,7 +148,6 @@ serve(async (req: Request) => {
           .bank-label { color: #64748b; font-weight: bold; font-size: 12px; text-transform: uppercase; }
           .bank-val { font-weight: bold; color: #1b1b1b; }
           
-          /* WARNING BOX STYLE */
           .warning-box { background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 15px; border-radius: 4px; margin-top: 20px; font-size: 14px; line-height: 1.5; }
           .warning-title { font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 8px; color: #b91c1c; }
 
@@ -154,7 +161,6 @@ serve(async (req: Request) => {
       </head>
       <body>
         <div class="container">
-          
           <div class="header">
             <img src="${logoUrl}" alt="Obsidian Labs" class="logo" />
             <br/>
@@ -190,14 +196,7 @@ serve(async (req: Request) => {
               <p style="margin: 0 0 10px 0;">
                 You <strong>MUST</strong> use <strong>ONLY your Order Reference (#${order.id.slice(0, 8)})</strong> as the transaction description.
               </p>
-              <p style="margin: 0 0 10px 0;">
-                <strong>DO NOT</strong> use terms like "Peptides", "BPC", "Reta", or product names.
-              </p>
-              <p style="margin: 0; font-weight: bold; color: #7f1d1d;">
-                Failure to strictly follow this instruction will result in your order being unidentifiable and potentially lost.
-              </p>
             </div>
-
           </div>
 
           <div class="section">
@@ -221,10 +220,8 @@ serve(async (req: Request) => {
           </div>
 
           <div class="footer">
-            <p>Questions? Reply to this email or contact <a href="mailto:obsidianlabsau@gmail.com" style="color: #ce2a34; text-decoration: none;">admin@obsidianlabs.com.au</a></p>
             <p>&copy; 2026 Obsidian Labs. Australia.</p>
           </div>
-
         </div>
       </body>
       </html>

@@ -1,120 +1,186 @@
+/* --- NAVBAR BASE --- */
 .navbar {
-  background-color: white;
-  border-bottom: 4px solid var(--baltic-sea);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 100;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e5e7eb;
+  height: 80px;
+  display: flex;
+  align-items: center;
 }
 
-.nav-top-bar {
+.nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 24px;
-  gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  padding: 0 20px;
 }
 
+/* --- LOGO --- */
 .nav-logo-wrapper {
   display: flex;
   align-items: center;
+  gap: 12px;
   text-decoration: none;
-  flex-shrink: 0;
 }
 
-/* LOGO SIZE: Doubled from ~68px to 136px */
-.nav-logo-img {
-  height: 136px;
+.nav-logo {
+  height: 40px;
   width: auto;
-  object-fit: contain;
-  transition: height 0.3s ease;
 }
 
-/* CENTER LINKS */
-.nav-links-center {
+.nav-brand-text {
   display: flex;
-  gap: 40px;
-  align-items: center;
-  justify-content: center;
-  flex: 1; /* Takes up remaining space between logo and cart */
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand-main {
+  font-family: "Oswald", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: 0.05em;
+}
+
+.brand-sub {
+  font-family: "Oswald", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #ce2a34;
+  letter-spacing: 0.25em;
+}
+
+/* --- DESKTOP LINKS --- */
+.nav-links-desktop {
+  display: flex;
+  gap: 30px; /* Reduced gap slightly to fit 5 items */
 }
 
 .nav-link {
-  text-decoration: none;
-  color: #64748b; /* Muted slate */
   font-family: "Oswald", sans-serif;
+  text-decoration: none;
+  color: #64748b;
   font-weight: 600;
-  font-size: 1.1rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em; /* Slightly tighter tracking */
+  font-size: 0.9rem;
   transition: color 0.2s;
   white-space: nowrap;
 }
 
 .nav-link:hover {
-  color: var(--brick-red);
+  color: #ce2a34;
 }
 
-/* ACTIONS (CART) */
+/* --- ACTIONS (Cart & Menu) --- */
 .nav-actions {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
+  gap: 20px;
 }
 
-.cart-btn {
+.nav-cart-btn {
   background: none;
   border: none;
   cursor: pointer;
   position: relative;
-  padding: 8px;
+  color: #1a1a1a;
+  transition: transform 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--baltic-sea);
-  transition: transform 0.2s;
 }
 
-.cart-btn:hover {
-  color: var(--brick-red);
+.nav-cart-btn:hover {
+  color: #ce2a34;
   transform: scale(1.05);
 }
 
-.cart-count-badge {
+.cart-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  background-color: var(--brick-red);
+  top: -8px;
+  right: -8px;
+  background-color: #ce2a34;
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid white;
-  border-radius: 4px;
 }
 
-/* RESPONSIVE: Adjust gap and logo size slightly on small screens */
-@media (max-width: 768px) {
-  .nav-top-bar {
-    padding: 10px 16px;
-    gap: 10px;
+/* --- HAMBURGER BUTTON --- */
+.nav-mobile-toggle {
+  display: none; /* Hidden on Desktop */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1a1a1a;
+}
+
+/* --- MOBILE MENU OVERLAY --- */
+.mobile-menu {
+  position: absolute;
+  top: 80px; /* Height of navbar */
+  left: 0;
+  width: 100%;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-menu.is-open {
+  max-height: 500px; /* INCREASED to comfortably fit 5 items */
+}
+
+.mobile-menu-inner {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.mobile-link {
+  font-family: "Oswald", sans-serif;
+  text-decoration: none;
+  color: #1a1a1a;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 15px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mobile-link:last-child {
+  border-bottom: none;
+}
+
+.mobile-link:hover {
+  color: #ce2a34;
+  padding-left: 10px;
+  transition: all 0.2s;
+}
+
+/* --- RESPONSIVE QUERIES --- */
+@media (max-width: 900px) {
+  .nav-links-desktop {
+    display: none; /* Hide standard links on mobile */
   }
 
-  .nav-logo-img {
-    height: 80px; /* Smaller on mobile to fit nicely */
+  .nav-mobile-toggle {
+    display: block; /* Show hamburger */
   }
 
-  .nav-links-center {
-    gap: 15px;
-  }
-
-  .nav-link {
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
+  .nav-logo {
+    height: 32px;
   }
 }

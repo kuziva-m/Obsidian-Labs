@@ -1,0 +1,82 @@
+/* Container for the rich text */
+.product-rich-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* Intro Paragraph */
+.product-intro {
+  font-weight: 500;
+  color: #1b1b1b;
+  margin-bottom: 24px;
+  font-size: 1.05rem;
+}
+
+/* Section Headings (Specs, Research, etc.) */
+.product-heading {
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  color: #1b1b1b;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+/* Bullet Lists (Specs) */
+.product-specs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: #f9fafb;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.product-specs li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed #e5e7eb;
+  padding-bottom: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.product-specs li:last-child {
+  border-bottom: none;
+}
+
+.product-specs strong {
+  color: #1b1b1b;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Warning Box */
+.product-warning {
+  margin-top: 32px;
+  background-color: #fef2f2; /* Light Red */
+  border-left: 4px solid #ce2a34;
+  padding: 16px;
+  font-size: 0.85rem;
+  color: #7f1d1d;
+}
+
+.product-warning strong {
+  display: block;
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  color: #ce2a34;
+}
+
+/* Standard Paragraphs */
+.product-rich-text p {
+  margin-bottom: 16px;
+}

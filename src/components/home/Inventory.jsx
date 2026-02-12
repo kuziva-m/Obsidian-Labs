@@ -19,16 +19,16 @@ export default function Inventory() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="font-[Oswald] text-4xl uppercase text-[var(--baltic-sea)]">
+            <h2 className="font-oswald text-4xl uppercase text-[var(--baltic-sea)]">
               Latest Arrivals
             </h2>
-            <p className="font-mono text-gray-500 mt-2">
+            <p className="text-gray-500 mt-2 font-bold text-sm tracking-wide">
               // RECENTLY RESTOCKED INVENTORY
             </p>
           </div>
           <Link
             to="/shop"
-            className="hidden md:block font-[Oswald] uppercase text-[var(--brick-red)] border-b-2 border-[var(--brick-red)] hover:text-black hover:border-black transition-all"
+            className="hidden md:block font-oswald uppercase text-[var(--brick-red)] border-b-2 border-[var(--brick-red)] hover:text-black hover:border-black transition-all"
           >
             View All Stock
           </Link>
@@ -49,18 +49,18 @@ export default function Inventory() {
                     className="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center font-[Oswald] text-gray-300 text-2xl -rotate-12">
+                  <div className="w-full h-full flex items-center justify-center font-oswald text-gray-300 text-2xl -rotate-12">
                     NO IMG
                   </div>
                 )}
               </div>
 
-              <h3 className="font-[Oswald] text-lg uppercase leading-tight text-[var(--baltic-sea)] mb-1">
+              <h3 className="font-oswald text-lg uppercase leading-tight text-[var(--baltic-sea)] mb-1">
                 {product.name}
               </h3>
 
               <div className="flex justify-between items-center mt-2">
-                <span className="font-mono text-xs text-gray-500">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">
                   {product.category}
                 </span>
                 <ShoppingCart
@@ -75,7 +75,7 @@ export default function Inventory() {
         <div className="mt-8 text-center md:hidden">
           <Link
             to="/shop"
-            className="font-[Oswald] uppercase bg-[var(--baltic-sea)] text-white px-6 py-3 text-sm tracking-widest"
+            className="font-oswald uppercase bg-[var(--baltic-sea)] text-white px-6 py-3 text-sm tracking-widest"
           >
             View All Stock
           </Link>

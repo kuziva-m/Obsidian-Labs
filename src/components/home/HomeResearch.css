@@ -1,0 +1,161 @@
+.home-research-section {
+  padding: 0;
+  background-color: #f4f4f5;
+  border-top: 1px solid #e5e7eb;
+}
+
+.research-banner {
+  background-color: #1b1b1b;
+  border-radius: 4px;
+  padding: 80px 60px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 60px 0;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+/* --- TEXT CONTENT --- */
+.research-content {
+  position: relative;
+  z-index: 10;
+  max-width: 600px;
+}
+
+.research-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #333;
+  padding: 6px 16px;
+  border-radius: 50px;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.research-tag span {
+  font-family: "Oswald", sans-serif;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 500;
+}
+
+/* --- BUTTON STYLING --- */
+.research-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  background: white;
+  color: #1b1b1b;
+  padding: 18px 36px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.research-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* --- BACKGROUND VISUALS --- */
+.research-visual {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: none;
+}
+
+.visual-circle {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%);
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(206, 42, 52, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    circle,
+    rgba(206, 42, 52, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+.visual-circle::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+/* MOLECULE IMAGE */
+.molecule-img {
+  width: 70%;
+  height: auto;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 10px rgba(206, 42, 52, 0.3));
+  animation: float-rotate 20s infinite linear;
+}
+
+@keyframes float-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* MOBILE RESPONSIVENESS */
+@media (max-width: 768px) {
+  .research-banner {
+    flex-direction: column;
+    padding: 60px 30px;
+    text-align: center;
+    /* Ensure height allows visuals to fit */
+    min-height: 500px;
+    justify-content: flex-start;
+  }
+
+  .research-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px; /* Space for the visual below */
+  }
+
+  /* Adjust visual container to be below text on mobile */
+  .research-visual {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    opacity: 1; /* Full opacity so image is clear */
+    top: auto;
+    right: auto;
+    bottom: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .visual-circle {
+    position: relative;
+    top: auto;
+    right: auto;
+    transform: none;
+    width: 250px;
+    height: 250px;
+  }
+}

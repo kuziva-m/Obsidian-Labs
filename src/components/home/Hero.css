@@ -1,57 +1,100 @@
 /* src/components/home/Hero.css */
 
+/* --- WRAPPER --- */
 .hero-wrapper {
-  background-color: var(--baltic-sea);
-  display: flex;
-  flex-direction: column;
-}
-
-/* --- THE IMAGE FRAME --- */
-.hero-visual-frame {
-  width: 100%;
-  height: 80vh;
-  background-image: url("/assets/hero-bg.jpeg");
-  /* FIXED: Use 'contain' on desktop to ensure nothing is cut off */
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  /* Match the background color to the image's dark areas for seamless sides */
   background-color: #050505;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
   border-bottom: 4px solid var(--brick-red);
-}
-
-/* --- THE CONTENT SECTION --- */
-.hero-info-section {
-  padding: 80px 0;
-  background-color: var(--baltic-sea);
   position: relative;
+  width: 100%;
 }
 
-/* Typography */
-.hero-title {
-  font-family: "Oswald", sans-serif;
-  font-size: clamp(2.5rem, 8vw, 6rem);
-  font-weight: 700;
-  line-height: 1.1;
-  color: white;
-  text-transform: uppercase;
-  margin-bottom: 24px;
+/* --- CONTAINER --- */
+.hero-content-container {
+  position: relative;
+  display: inline-block; /* Crucial: Shrinks box to fit image exactly */
+  width: auto;
+  max-width: 100%;
+  line-height: 0;
 }
 
-/* --- MOBILE & TABLET ADJUSTMENTS --- */
+/* --- THE IMAGE --- */
+.hero-bg-img {
+  display: block;
+  height: 85vh; /* Desktop: Fixed height */
+  width: auto; /* Width adjusts naturally */
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* =========================================
+   1. DESKTOP BUTTON SETTINGS
+   ========================================= */
+.hotspot-desktop {
+  display: block;
+  position: absolute;
+  cursor: pointer;
+  z-index: 50;
+  transform: translate(-50%, -50%);
+
+  /* --- ADJUST DESKTOP POSITION --- */
+  top: 60.5%;
+  left: 20%;
+  width: 35%;
+  height: 12%;
+  /* ------------------------------- */
+}
+
+.hotspot-mobile {
+  display: none;
+}
+
+/* =========================================
+   2. MOBILE SETTINGS (UPDATED FOR SAFETY)
+   ========================================= */
 @media (max-width: 1024px) {
-  .hero-visual-frame {
-    height: 60vh;
-    /* Maintain 'cover' for mobile since you mentioned it looks perfect there */
-    background-size: cover;
-    background-position: 75% center;
+  .hero-wrapper {
+    display: block;
   }
 
-  .hero-title {
-    font-size: 3rem;
+  .hero-content-container {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
-  .hero-info-section {
-    padding: 40px 0;
+  .hero-bg-img {
+    /* SAFETY FIX: Natural aspect ratio */
+    width: 100%; /* Full width of phone */
+    height: auto; /* Height adjusts automatically */
+    max-height: none; /* Remove limits */
+    object-fit: contain; /* No cropping allowed */
+    object-position: center;
+  }
+
+  /* HIDE DESKTOP BUTTON */
+  .hotspot-desktop {
+    display: none !important;
+  }
+
+  /* SHOW MOBILE BUTTON */
+  .hotspot-mobile {
+    display: block !important;
+    position: absolute;
+    cursor: pointer;
+    z-index: 50;
+    transform: translate(-50%, -50%);
+
+    /* --- ADJUST MOBILE POSITION --- */
+    /* These % will now stay perfect on ALL phones */
+    top: 60%;
+    left: 20%;
+    width: 30%;
+    height: 12%;
+    /* ----------------------------- */
+
   }
 }

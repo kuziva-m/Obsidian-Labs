@@ -26,6 +26,7 @@ export default function Success() {
         return;
       }
 
+      // FIX: Select 'size_label' from variants because 'size' doesn't exist in your schema
       const { data: itemsData, error: itemsError } = await supabase
         .from("order_items")
         .select(
@@ -33,6 +34,7 @@ export default function Success() {
           quantity,
           price_at_purchase,
           variants (
+            size_label, 
             products (
               name,
               short_name,
@@ -78,10 +80,9 @@ export default function Success() {
       <SEO title="Order Confirmed" />
 
       <div className="container mx-auto max-w-3xl pt-24">
-        {/* SUCCESS HEADER - UPDATED LAYOUT */}
+        {/* SUCCESS HEADER */}
         <div className="bg-white p-8 rounded-t-md border-b border-gray-100 shadow-sm overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            {/* Left Side: Icon & Text */}
             <div className="flex flex-col items-center md:items-start text-center md:text-left">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-[#ce2a34]/10 rounded-full mb-4">
                 <CheckCircle size={32} className="text-[#ce2a34]" />
@@ -93,8 +94,6 @@ export default function Success() {
                 Order #{order.id.slice(0, 8)}
               </p>
             </div>
-
-            {/* Right Side: Big Logo */}
             <div className="hidden md:block">
               <img
                 src="/assets/obsidian-logo-red.png"
@@ -105,7 +104,7 @@ export default function Success() {
           </div>
         </div>
 
-        {/* BANK DETAILS (Dark Background) */}
+        {/* BANK DETAILS */}
         <div className="bg-[#1b1b1b] text-white p-8 shadow-md">
           <h2
             className="font-[Oswald] text-xl uppercase mb-6 flex items-center gap-2"
@@ -197,6 +196,9 @@ export default function Success() {
           <div className="space-y-4">
             {order.items.map((item, index) => {
               const product = item.variants?.products;
+              // FIX: Use 'size_label' from the fetched variant data
+              const size = item.variants?.size_label || "Standard";
+
               return (
                 <div
                   key={index}
@@ -220,8 +222,10 @@ export default function Success() {
                       <div className="font-[Oswald] text-lg uppercase leading-none text-[#1b1b1b]">
                         {product?.name || "Unknown Item"}
                       </div>
-                      <div className="font-mono text-xs text-gray-500 mt-1">
-                        Qty: {item.quantity}
+                      {/* FIXED: Display Size Label */}
+                      <div className="font-mono text-xs text-gray-500 mt-1 uppercase tracking-wide">
+                        <span className="font-bold text-[#ce2a34]">{size}</span>{" "}
+                        • Qty: {item.quantity}
                       </div>
                     </div>
                   </div>

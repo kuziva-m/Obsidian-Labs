@@ -13,6 +13,10 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import CartDrawer from "./components/CartDrawer";
 import FAQ from "./pages/FAQ";
+import ResearchLibrary from "./pages/ResearchLibrary";
+import ResearchDivisions from "./pages/ResearchDivisions";
+import InstagramButton from "./components/InstagramButton";
+import Terms from "./pages/Terms";
 
 function App() {
   const location = useLocation();
@@ -25,8 +29,9 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <AgeVerification /> {/* Add this here */}
+      <AgeVerification />
       <CartDrawer />
+      <InstagramButton />
       {!isHiddenRoute && <Navbar />}
       <div className="flex-grow">
         <Routes>
@@ -38,8 +43,14 @@ function App() {
           <Route path="/success" element={<Success />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/research" element={<ResearchLibrary />} />
+          <Route
+            path="/research-divisions"
+            element={<ResearchDivisions />}
+          />{" "}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
       {!isHiddenRoute && <Footer />}
