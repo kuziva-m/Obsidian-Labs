@@ -46,6 +46,10 @@ export default function Navbar() {
           <Link to="/research" className="nav-link">
             Library
           </Link>
+          {/* NEW LINK ADDED HERE */}
+          <Link to="/quality" className="nav-link">
+            QA & COA's
+          </Link>
           <Link to="/faq" className="nav-link">
             FAQ
           </Link>
@@ -92,6 +96,10 @@ export default function Navbar() {
           </Link>
           <Link to="/research" className="mobile-link" onClick={closeMenu}>
             Library
+          </Link>
+          {/* NEW LINK ADDED HERE */}
+          <Link to="/quality" className="mobile-link" onClick={closeMenu}>
+            QA & COA's
           </Link>
           <Link to="/faq" className="mobile-link" onClick={closeMenu}>
             FAQ

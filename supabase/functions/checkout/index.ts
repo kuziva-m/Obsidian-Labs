@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const ADMIN_EMAIL = "obsidianlabsau@gmail.com"; // Admin Notification Email
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,14 +33,13 @@ serve(async (req: Request) => {
     const { items, customerDetails, shippingMethod, shippingCost } =
       await req.json();
 
-    // 1. Calculate Totals
+    // 1. Calculate Totals & Fetch Variant Details
     const variantIds = items.map((item: CartItem) => {
       if (!item.variants || item.variants.length === 0)
         throw new Error(`Product ${item.name} has no variants.`);
       return item.variants[0].id;
     });
 
-    // FIX: Ensure we select all columns (*) so we get 'size_label'
     const { data: dbVariants, error: dbError } = await supabaseClient
       .from("variants")
       .select(`*, products(name, short_name)`)
@@ -52,16 +52,13 @@ serve(async (req: Request) => {
 
     for (const item of items as CartItem[]) {
       const variantId = item.variants[0].id;
-      const dbItem = dbVariants?.find(
-        (v: { id: string }) => v.id == variantId, // Loose equality in case of string/int mismatch
-      );
+      const dbItem = dbVariants?.find((v: { id: string }) => v.id == variantId);
 
       if (!dbItem) continue;
 
       const itemTotal = dbItem.price * item.quantity;
       subtotal += itemTotal;
 
-      // FIX: Use 'size_label' from your schema instead of 'size'
       const variantName = dbItem.size_label || "Standard";
       const fullProductName = `${dbItem.products.name} (${variantName})`;
 
@@ -69,14 +66,14 @@ serve(async (req: Request) => {
         variant_id: dbItem.id,
         quantity: item.quantity,
         price_at_purchase: dbItem.price,
-        product_name: fullProductName, // This ensures the email has the right name
+        product_name: fullProductName,
         total: itemTotal,
       });
     }
 
     const totalAmount = subtotal + shippingCost;
 
-    // 2. Create Order
+    // 2. Create Order in Database
     const { data: order, error: orderError } = await supabaseClient
       .from("orders")
       .insert({
@@ -96,13 +93,12 @@ serve(async (req: Request) => {
     if (orderError) throw orderError;
 
     // 3. Save Order Items
-    // FIX: Include 'product_name_snapshot' so the database remembers exactly what was bought
     const dbItemsPayload = orderItems.map(
       ({ variant_id, quantity, price_at_purchase, product_name }) => ({
         variant_id,
         quantity,
         price_at_purchase,
-        product_name_snapshot: product_name, // Saving the full name with variant to DB
+        product_name_snapshot: product_name,
         order_id: order.id,
       }),
     );
@@ -112,7 +108,7 @@ serve(async (req: Request) => {
       .insert(dbItemsPayload);
     if (itemsError) throw itemsError;
 
-    // 4. Send Email
+    // --- SHARED EMAIL CONTENT ---
     const productRows = orderItems
       .map(
         (item) => `
@@ -128,8 +124,12 @@ serve(async (req: Request) => {
       .join("");
 
     const logoUrl = "https://obsidianlabs-au.com/assets/obsidian-logo-red.png";
+    const orderRef = order.id.slice(0, 8);
 
-    const emailHtml = `
+    // ============================================================
+    // 4. EMAIL TO CUSTOMER
+    // ============================================================
+    const customerEmailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -179,28 +179,28 @@ serve(async (req: Request) => {
               </div>
               <div class="bank-row">
                 <span class="bank-label">BSB</span>
-                <span class="bank-val">062-000</span>
+                <span class="bank-val">944-100</span>
               </div>
               <div class="bank-row">
                 <span class="bank-label">Account</span>
-                <span class="bank-val">1234 5678</span>
+                <span class="bank-val">550842162</span>
               </div>
               <div class="bank-row" style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
                 <span class="bank-label">Reference</span>
-                <span class="bank-val">#${order.id.slice(0, 8)}</span>
+                <span class="bank-val">#${orderRef}</span>
               </div>
             </div>
 
             <div class="warning-box">
               <span class="warning-title">⚠ IMPORTANT: Reference Requirement</span>
               <p style="margin: 0 0 10px 0;">
-                You <strong>MUST</strong> use <strong>ONLY your Order Reference (#${order.id.slice(0, 8)})</strong> as the transaction description.
+                You <strong>MUST</strong> use <strong>ONLY your Order Reference (#${orderRef})</strong> as the transaction description.
               </p>
             </div>
           </div>
 
           <div class="section">
-            <div class="section-title">Order Summary (#${order.id.slice(0, 8)})</div>
+            <div class="section-title">Order Summary (#${orderRef})</div>
             <table>
               <thead>
                 <tr>
@@ -227,20 +227,53 @@ serve(async (req: Request) => {
       </html>
     `;
 
-    const { error: emailError } = await resend.emails.send({
+    // Send Customer Email
+    await resend.emails.send({
       from: "Obsidian Labs <orders@obsidianlabs-au.com>",
       to: [customerDetails.email],
-      subject: `Order #${order.id.slice(0, 8)} Confirmation`,
-      html: emailHtml,
+      subject: `Order #${orderRef} Confirmation`,
+      html: customerEmailHtml,
     });
 
-    if (emailError) console.error("Resend Error:", emailError);
+    // ============================================================
+    // 5. EMAIL TO ADMIN
+    // ============================================================
+    const adminEmailHtml = `
+      <h2>New Order Received: #${orderRef}</h2>
+      <p><strong>Customer:</strong> ${customerDetails.firstName} ${customerDetails.lastName}</p>
+      <p><strong>Email:</strong> ${customerDetails.email}</p>
+      <p><strong>Total:</strong> $${totalAmount.toFixed(2)}</p>
+      
+      <h3>Shipping Details</h3>
+      <p>
+        ${customerDetails.address}<br/>
+        ${customerDetails.city}, ${customerDetails.state} ${customerDetails.postalCode}<br/>
+        Phone: ${customerDetails.phone || "N/A"}
+      </p>
+
+      <h3>Order Items</h3>
+      <table width="100%" cellpadding="5" border="1" style="border-collapse:collapse;">
+        <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
+        ${productRows}
+      </table>
+      
+      <p><a href="https://obsidianlabs-au.com/admin">View in Admin Dashboard</a></p>
+    `;
+
+    // Send Admin Email
+    await resend.emails.send({
+      from: "Obsidian Labs <orders@obsidianlabs-au.com>",
+      to: [ADMIN_EMAIL],
+      subject: `[New Order] #${orderRef} - $${totalAmount.toFixed(2)}`,
+      html: adminEmailHtml,
+    });
 
     return new Response(JSON.stringify({ orderId: order.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error: any) {
+    console.error("Checkout Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

@@ -17,6 +17,7 @@ import ResearchLibrary from "./pages/ResearchLibrary";
 import ResearchDivisions from "./pages/ResearchDivisions";
 import InstagramButton from "./components/InstagramButton";
 import Terms from "./pages/Terms";
+import Quality from "./pages/Quality"; // ADDED IMPORT
 
 function App() {
   const location = useLocation();
@@ -45,11 +46,9 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/research" element={<ResearchLibrary />} />
-          <Route
-            path="/research-divisions"
-            element={<ResearchDivisions />}
-          />{" "}
+          <Route path="/research-divisions" element={<ResearchDivisions />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/quality" element={<Quality />} /> {/* ADDED ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

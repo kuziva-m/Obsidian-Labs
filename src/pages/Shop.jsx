@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useCart } from "../lib/CartContext";
@@ -10,27 +10,28 @@ import {
   Syringe,
   ShoppingCart,
   Check,
+  Search,
+  X,
 } from "lucide-react";
 import "./Shop.css";
 import "../components/ProductCard.css";
 
-// 1. Define the exact order based on your note list
 const PRODUCT_ORDER = [
   "HGH Kit (Blue Tops)",
   "Retatrutide",
-  "Tirzepatide (Mounjaro)",
+  "Tirzepatide",
   "Cagrilintide",
   "GHK-Cu",
   "BPC-157",
-  "BPC-157 + TB-500 Blend",
+  "BPC-157 & TB500 Blend", // Matches "BPC157 10mg + TB500 10mg"
   "KPV",
   "SS-31",
-  "MOTS-c",
+  "MOTS-C", // Capitalized C to match DB often
   "NAD+",
   "Thymosin Alpha-1",
   "Selank",
   "Semax",
-  "CJC-1295 (No DAC) + Ipamorelin",
+  "CJC-1295 No DAC + Ipamorelin",
   "Tesamorelin",
   "Ipamorelin",
   "IGF-1 LR3",
@@ -42,10 +43,10 @@ const PRODUCT_ORDER = [
   "Pinealon",
   "Epitalon",
   "Glutathione",
-  "5-amino-1mq",
+  "5-Amino-1MQ",
   "Oxytocin Acetate",
   "SLU-PP-322",
-  "HCG",
+  "HCG", // Matches "HCG 10,000iu"
   "BAC Water",
 ];
 
@@ -53,6 +54,7 @@ export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const activeCategory = searchParams.get("category") || "All";
 
@@ -66,7 +68,6 @@ export default function Shop() {
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
-
       let query = supabase.from("products").select(`*, variants (*)`);
 
       if (activeCategory !== "All") {
@@ -78,18 +79,26 @@ export default function Shop() {
       if (error) {
         console.error("Error fetching products:", error);
       } else if (data) {
-        // 2. Apply the custom sort logic
+        // Improved Sorting Logic
         const sorted = data.sort((a, b) => {
-          const indexA = PRODUCT_ORDER.indexOf(a.name);
-          const indexB = PRODUCT_ORDER.indexOf(b.name);
+          // Normalize names: trim spaces and check against the list
+          const nameA = a.name.trim();
+          const nameB = b.name.trim();
 
-          // If a name isn't in our list, put it at the end
-          const finalA = indexA === -1 ? 999 : indexA;
-          const finalB = indexB === -1 ? 999 : indexB;
+          // Try to find exact match first, then partial match if needed
+          let indexA = PRODUCT_ORDER.findIndex(
+            (orderName) => nameA === orderName || nameA.includes(orderName),
+          );
+          let indexB = PRODUCT_ORDER.findIndex(
+            (orderName) => nameB === orderName || nameB.includes(orderName),
+          );
 
-          return finalA - finalB;
+          // If not found in list, push to the bottom
+          if (indexA === -1) indexA = 999;
+          if (indexB === -1) indexB = 999;
+
+          return indexA - indexB;
         });
-
         setProducts(sorted);
       }
       setLoading(false);
@@ -97,22 +106,57 @@ export default function Shop() {
     fetchProducts();
   }, [activeCategory]);
 
+  // Real-time filtering logic
+  const filteredProducts = useMemo(() => {
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.short_name?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [products, searchQuery]);
+
   return (
     <div className="shop-page bg-[#f4f4f5] min-h-screen pb-20">
       <SEO title="Shop Inventory" />
 
       <div className="container mx-auto px-4 mt-8 pt-24">
+        {/* --- SEARCH BAR SECTION --- */}
+        <div className="max-w-2xl mx-auto md:mx-0 mb-6">
+          <div className="search-container">
+            <Search className="search-icon" size={20} />
+            <input
+              type="text"
+              placeholder="Search compounds (e.g. BPC-157)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="shop-search-input font-oswald"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="clear-search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* --- CATEGORY FILTERS --- */}
         <div className="flex overflow-x-auto pb-4 gap-2 mb-8 no-scrollbar justify-center md:justify-start">
           {categories.map((cat) => (
             <button
               key={cat.name}
-              onClick={() => setSearchParams({ category: cat.name })}
+              onClick={() => {
+                setSearchParams({ category: cat.name });
+                setSearchQuery(""); // Clear search when switching categories
+              }}
               className={`
                 flex items-center gap-2 px-5 py-2.5 rounded-md font-[Oswald] uppercase text-sm tracking-wide transition-all whitespace-nowrap border-2
                 ${
                   activeCategory === cat.name
-                    ? "bg-[var(--brick-red)] border-[var(--brick-red)] text-white shadow-[4px_4px_0px_0px_#000]"
-                    : "bg-white border-[var(--baltic-sea)] text-[var(--baltic-sea)] hover:bg-gray-50"
+                    ? "bg-[#ce2a34] border-[#ce2a34] text-white shadow-[4px_4px_0px_0px_#000]"
+                    : "bg-white border-[#1b1b1b] text-[#1b1b1b] hover:bg-gray-50"
                 }
               `}
             >
@@ -122,29 +166,31 @@ export default function Shop() {
           ))}
         </div>
 
+        {/* --- PRODUCTS GRID --- */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {loading
-            ? [...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-80 bg-gray-200 rounded-md animate-pulse border-2 border-gray-300"
-                />
-              ))
-            : products.map((p) => <ProductCard key={p.id} product={p} />)}
+          {loading ? (
+            [...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="h-80 bg-gray-200 rounded-md animate-pulse border-2 border-gray-300"
+              />
+            ))
+          ) : filteredProducts.length > 0 ? (
+            filteredProducts.map((p) => <ProductCard key={p.id} product={p} />)
+          ) : (
+            <div className="col-span-full text-center py-20 border-2 border-dashed border-gray-300 rounded-md">
+              <p className="font-[Oswald] text-2xl text-gray-400 uppercase">
+                No Results Found for "{searchQuery}"
+              </p>
+            </div>
+          )}
         </div>
-
-        {!loading && products.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed border-gray-300 rounded-md">
-            <p className="font-[Oswald] text-2xl text-gray-400 uppercase">
-              No Items Found
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
+// ProductCard Component
 function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);

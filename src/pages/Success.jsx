@@ -26,18 +26,16 @@ export default function Success() {
         return;
       }
 
-      // FIX: Select 'size_label' from variants because 'size' doesn't exist in your schema
+      // Fetch items including the snapshot name
       const { data: itemsData, error: itemsError } = await supabase
         .from("order_items")
         .select(
           `
           quantity,
           price_at_purchase,
+          product_name_snapshot, 
           variants (
-            size_label, 
             products (
-              name,
-              short_name,
               image_url
             )
           )
@@ -80,7 +78,7 @@ export default function Success() {
       <SEO title="Order Confirmed" />
 
       <div className="container mx-auto max-w-3xl pt-24">
-        {/* SUCCESS HEADER */}
+        {/* HEADER */}
         <div className="bg-white p-8 rounded-t-md border-b border-gray-100 shadow-sm overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex flex-col items-center md:items-start text-center md:text-left">
@@ -110,8 +108,8 @@ export default function Success() {
             className="font-[Oswald] text-xl uppercase mb-6 flex items-center gap-2"
             style={{ color: "white" }}
           >
-            <span className="w-2 h-2 bg-[#ce2a34] rounded-full"></span>
-            Payment Required
+            <span className="w-2 h-2 bg-[#ce2a34] rounded-full"></span> Payment
+            Required
           </h2>
           <p className="font-mono text-sm mb-6" style={{ color: "#e5e7eb" }}>
             Please make your payment to the account below. Your order will be
@@ -149,7 +147,7 @@ export default function Success() {
                 BSB
               </div>
               <div className="font-mono text-lg" style={{ color: "white" }}>
-                062-000
+                944-100
               </div>
             </div>
             <div>
@@ -160,7 +158,7 @@ export default function Success() {
                 Account Number
               </div>
               <div className="font-mono text-lg" style={{ color: "white" }}>
-                1234 5678
+                5508 42162
               </div>
             </div>
           </div>
@@ -195,9 +193,9 @@ export default function Success() {
 
           <div className="space-y-4">
             {order.items.map((item, index) => {
-              const product = item.variants?.products;
-              // FIX: Use 'size_label' from the fetched variant data
-              const size = item.variants?.size_label || "Standard";
+              // FIX: Use the snapshot name we saved (e.g., "BPC-157 (5mg)")
+              const displayName = item.product_name_snapshot || "Unknown Item";
+              const imageUrl = item.variants?.products?.image_url;
 
               return (
                 <div
@@ -206,10 +204,10 @@ export default function Success() {
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                      {product?.image_url ? (
+                      {imageUrl ? (
                         <img
-                          src={product.image_url}
-                          alt={product.name}
+                          src={imageUrl}
+                          alt="Product"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -220,12 +218,10 @@ export default function Success() {
                     </div>
                     <div>
                       <div className="font-[Oswald] text-lg uppercase leading-none text-[#1b1b1b]">
-                        {product?.name || "Unknown Item"}
+                        {displayName}
                       </div>
-                      {/* FIXED: Display Size Label */}
                       <div className="font-mono text-xs text-gray-500 mt-1 uppercase tracking-wide">
-                        <span className="font-bold text-[#ce2a34]">{size}</span>{" "}
-                        • Qty: {item.quantity}
+                        Qty: {item.quantity}
                       </div>
                     </div>
                   </div>

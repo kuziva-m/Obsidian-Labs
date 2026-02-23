@@ -27,7 +27,7 @@ export default function ProductPage() {
     async function fetchProduct() {
       // 1. Fetch Product by Slug (or ID if you use IDs in URL)
       // Assuming 'slug' matches 'id' or you have a slug column.
-      // If you don't have a slug column, change this logic to search by ID or Name.
+      // The '*' in select will automatically include your new 'product_page_title' column.
       const { data, error } = await supabase
         .from("products")
         .select(
@@ -83,9 +83,12 @@ export default function ProductPage() {
 
   const isOutOfStock = !product.in_stock;
 
+  // Determine the display title: Use the new column if available, fallback to standard name
+  const pageTitle = product.product_page_title || product.name;
+
   return (
     <div className="bg-white min-h-screen pb-20">
-      <SEO title={`${product.name} - Obsidian Labs`} />
+      <SEO title={`${pageTitle} - Obsidian Labs`} />
 
       {/* HEADER / BREADCRUMB */}
       <div className="bg-[#1b1b1b] text-white py-6">
@@ -107,7 +110,7 @@ export default function ProductPage() {
               {product.image_url ? (
                 <img
                   src={product.image_url}
-                  alt={product.name}
+                  alt={pageTitle}
                   className="w-full h-full object-contain mix-blend-multiply p-10"
                 />
               ) : (
@@ -157,7 +160,7 @@ export default function ProductPage() {
               </span>
             </div>
             <h1 className="font-oswald text-5xl text-[#1b1b1b] uppercase mb-6 leading-tight">
-              {product.name}
+              {pageTitle}
             </h1>
 
             {/* Price Display */}

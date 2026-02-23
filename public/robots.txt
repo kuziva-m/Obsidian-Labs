@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://obsidianlabs-au.com/sitemap.xml
