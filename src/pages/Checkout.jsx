@@ -179,8 +179,9 @@ export default function Checkout() {
         console.error("Failed to send notification emails:", emailErr);
       }
 
-      // 4. FIRE GOOGLE ANALYTICS PURCHASE EVENT
+      // 4. FIRE GOOGLE ANALYTICS & ADS PURCHASE EVENTS
       if (typeof window !== "undefined" && window.gtag) {
+        // Standard GA4 Tracking (For Analytics Dashboard)
         window.gtag("event", "purchase", {
           transaction_id: orderId,
           value: estimatedTotal,
@@ -191,6 +192,13 @@ export default function Checkout() {
             quantity: item.quantity,
             item_variant: getVariantLabel(item),
           })),
+        });
+
+        // Specific Google Ads Conversion Tracking (For Ad Campaigns)
+        window.gtag("event", "ads_conversion_Purchase_1", {
+          transaction_id: orderId,
+          value: estimatedTotal,
+          currency: "AUD",
         });
       }
 
