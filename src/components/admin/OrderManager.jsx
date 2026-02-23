@@ -1,173 +1,386 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import { styles } from "./OrderManagerStyles";
-import OrderRow from "./OrderRow";
-import { Search, CheckCircle, RefreshCw } from "lucide-react";
+import {
+  Loader,
+  Eye,
+  RefreshCw,
+  CheckCircle,
+  Truck,
+  AlertTriangle,
+} from "lucide-react";
 
 export default function OrderManager() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("on_hold");
-  const [notification, setNotification] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  // Modal states
+  const [trackingInput, setTrackingInput] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchOrders = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select(
-        `
-        *, 
-        order_items (
-          quantity, 
-          price_at_purchase, 
-          variants (products (name, image_url))
-        )
-      `,
-      )
+      .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) console.error("Error fetching orders:", error);
-    else setOrders(data || []);
+    if (!error && data) {
+      setOrders(data);
+    }
     setLoading(false);
   };
 
-  const showToast = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    setIsUpdating(true);
+    try {
+      const payload = { status: newStatus };
+      if (newStatus === "shipped") {
+        payload.tracking_number = trackingInput;
+      }
+
+      const { error } = await supabase
+        .from("orders")
+        .update(payload)
+        .eq("id", orderId);
+      if (error) throw error;
+
+      // Automatically trigger email to customer!
+      if (newStatus === "shipped" || newStatus === "processing") {
+        await supabase.functions.invoke("send-email", {
+          body: {
+            email: selectedOrder.customer_email,
+            name: selectedOrder.customer_name,
+            orderId: selectedOrder.id,
+            status: newStatus,
+            trackingNumber: trackingInput || "N/A",
+            items: selectedOrder.items,
+          },
+        });
+      }
+
+      await fetchOrders();
+      setSelectedOrder(null);
+      setTrackingInput("");
+    } catch (err) {
+      alert("Error updating order: " + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  // --- FILTERING LOGIC ---
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      const s = search.toLowerCase();
-      const matchesSearch =
-        order.id.toLowerCase().includes(s) ||
-        order.customer_email?.toLowerCase().includes(s) ||
-        order.customer_name?.toLowerCase().includes(s);
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "pending":
+        return (
+          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold uppercase">
+            Pending
+          </span>
+        );
+      case "processing":
+        return (
+          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold uppercase">
+            Processing
+          </span>
+        );
+      case "shipped":
+        return (
+          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold uppercase">
+            Shipped
+          </span>
+        );
+      default:
+        return (
+          <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-bold uppercase">
+            {status}
+          </span>
+        );
+    }
+  };
 
-      const matchesStatus =
-        statusFilter === "all" || order.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [orders, search, statusFilter]);
-
-  // --- STATS LOGIC ---
-  const stats = useMemo(() => {
-    const totalRevenue = orders.reduce(
-      (sum, o) => sum + (o.total_amount || 0),
-      0,
+  if (loading)
+    return (
+      <div className="flex justify-center p-12">
+        <Loader className="animate-spin text-[#ce2a34]" size={32} />
+      </div>
     );
-    const actionNeededCount = orders.filter(
-      (o) => o.status === "on_hold" || o.status === "paid",
-    ).length;
-
-    return {
-      totalRevenue,
-      actionNeededCount,
-      totalOrders: orders.length,
-    };
-  }, [orders]);
-
-  const tabs = [
-    { id: "all", label: "All" },
-    { id: "on_hold", label: "On Hold" },
-    { id: "paid", label: "Paid" },
-    { id: "shipped", label: "Shipped" },
-    { id: "delivered", label: "Delivered" },
-  ];
 
   return (
-    <div style={{ position: "relative", padding: "20px" }}>
-      {/* STATS BAR */}
-      <div style={styles.statsContainer}>
-        <div style={styles.statItem}>
-          <span style={styles.statLabel}>Total Revenue</span>
-          <span style={styles.statValue}>${stats.totalRevenue.toFixed(2)}</span>
-        </div>
-        <div style={styles.statDivider} />
-        <div style={styles.statItem}>
-          <span style={styles.statLabel}>Action Required</span>
-          <span
-            style={{
-              ...styles.statValue,
-              color: stats.actionNeededCount > 0 ? "#ce2a34" : "inherit",
-            }}
-          >
-            {stats.actionNeededCount}
-          </span>
-        </div>
-        <div style={styles.statDivider} />
+    <div className="bg-white rounded shadow-sm border border-gray-200">
+      <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <h2 className="font-oswald text-2xl uppercase text-[#1b1b1b]">
+          Order Management
+        </h2>
         <button
           onClick={fetchOrders}
-          style={{
-            ...styles.exportBtn,
-            background: "transparent",
-            color: "#666",
-            border: "1px solid #ddd",
-          }}
+          className="flex items-center gap-2 text-sm font-mono text-gray-500 hover:text-[#ce2a34]"
         >
           <RefreshCw size={16} /> Refresh
         </button>
       </div>
 
-      {/* TOOLBAR */}
-      <div style={styles.toolbar}>
-        <div style={styles.filterGroup}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setStatusFilter(tab.id)}
-              style={{
-                ...styles.filterBtn,
-                background: statusFilter === tab.id ? "#1b1b1b" : "white",
-                color: statusFilter === tab.id ? "white" : "#64748b",
-                borderColor: statusFilter === tab.id ? "#1b1b1b" : "#e2e8f0",
-                fontWeight: statusFilter === tab.id ? "bold" : "normal",
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={styles.searchWrapper}>
-          <Search size={16} color="#94a3b8" style={{ marginRight: "8px" }} />
-          <input
-            placeholder="Search ID, Name, Email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={styles.inputReset}
-          />
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left font-body">
+          <thead className="bg-white border-b border-gray-200">
+            <tr>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Order ID
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Date
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Customer
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Total
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Status
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase text-center">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr
+                key={order.id}
+                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+              >
+                <td className="p-4 font-mono text-sm text-[#ce2a34] font-bold">
+                  #{order.id.slice(0, 8).toUpperCase()}
+                </td>
+                <td className="p-4 text-sm text-gray-600">
+                  {new Date(order.created_at).toLocaleDateString()}
+                </td>
+                <td className="p-4">
+                  <div className="font-bold text-[#1b1b1b] text-sm">
+                    {order.customer_name}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {order.customer_email}
+                  </div>
+                </td>
+                <td className="p-4 font-oswald text-lg">
+                  ${order.total_amount.toFixed(2)}
+                </td>
+                <td className="p-4">{getStatusBadge(order.status)}</td>
+                <td className="p-4 text-center">
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-3 py-1.5 rounded text-xs font-oswald uppercase tracking-widest hover:bg-[#ce2a34] transition-colors"
+                  >
+                    <Eye size={14} /> View
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {orders.length === 0 && (
+              <tr>
+                <td colSpan="6" className="p-8 text-center text-gray-500">
+                  No orders found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* TABLE */}
-      <div style={styles.tableContainer}>
-        {loading ? (
-          <div style={styles.emptyState}>Loading orders...</div>
-        ) : filteredOrders.length === 0 ? (
-          <div style={styles.emptyState}>No orders found.</div>
-        ) : (
-          filteredOrders.map((order) => (
-            <OrderRow
-              key={order.id}
-              order={order}
-              onUpdate={fetchOrders}
-              showToast={showToast}
-            />
-          ))
-        )}
-      </div>
+      {/* ORDER DETAILS MODAL */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-white rounded w-full max-w-4xl my-8 shadow-2xl">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-[#1b1b1b] text-white rounded-t">
+              <h3 className="font-oswald text-2xl uppercase tracking-widest">
+                Order #{selectedOrder.id.slice(0, 8).toUpperCase()}
+              </h3>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-white font-bold text-2xl"
+              >
+                &times;
+              </button>
+            </div>
 
-      {notification && (
-        <div style={styles.toast}>
-          <CheckCircle size={16} /> {notification}
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
+              {/* Left Col */}
+              <div>
+                <h4 className="font-oswald uppercase text-gray-400 text-sm mb-3 border-b border-gray-100 pb-1">
+                  Customer Info
+                </h4>
+                <p className="font-bold text-[#1b1b1b]">
+                  {selectedOrder.customer_name}
+                </p>
+                <p className="text-gray-600 text-sm mb-6">
+                  {selectedOrder.customer_email}
+                </p>
+
+                <h4 className="font-oswald uppercase text-gray-400 text-sm mb-3 border-b border-gray-100 pb-1">
+                  Shipping Address
+                </h4>
+                <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded border border-gray-200 font-mono">
+                  <p className="font-bold text-[#1b1b1b] mb-1">
+                    {selectedOrder.shipping_address?.name}
+                  </p>
+                  <p>{selectedOrder.shipping_address?.line1}</p>
+                  <p>
+                    {selectedOrder.shipping_address?.city},{" "}
+                    {selectedOrder.shipping_address?.state}{" "}
+                    {selectedOrder.shipping_address?.postcode}
+                  </p>
+                  <p className="mt-2 text-gray-400">
+                    Ph: {selectedOrder.shipping_address?.phone}
+                  </p>
+                </div>
+
+                <h4 className="font-oswald uppercase text-gray-400 text-sm mt-8 mb-3 border-b border-gray-100 pb-1">
+                  Payment Proof
+                </h4>
+                {selectedOrder.receipt_url &&
+                selectedOrder.receipt_url !== "No screenshot provided" ? (
+                  <a
+                    href={selectedOrder.receipt_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block relative group border border-gray-200 rounded p-1"
+                  >
+                    <img
+                      src={selectedOrder.receipt_url}
+                      alt="Receipt"
+                      className="max-h-40 rounded object-contain"
+                    />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                      <span className="text-white text-xs font-bold uppercase tracking-widest">
+                        Click to Enlarge
+                      </span>
+                    </div>
+                  </a>
+                ) : (
+                  <div className="bg-red-50 text-red-600 p-4 rounded text-sm flex items-center gap-2 border border-red-200 font-bold uppercase tracking-wide">
+                    <AlertTriangle size={18} /> No Receipt Provided
+                  </div>
+                )}
+              </div>
+
+              {/* Right Col */}
+              <div>
+                <h4 className="font-oswald uppercase text-gray-400 text-sm mb-3 border-b border-gray-100 pb-1">
+                  Items Ordered
+                </h4>
+                <div className="space-y-3 mb-8 bg-gray-50 p-4 rounded border border-gray-200">
+                  {selectedOrder.items?.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between items-center text-sm border-b border-gray-200 pb-3 last:border-0 last:pb-0"
+                    >
+                      <div>
+                        <span className="font-bold text-[#1b1b1b]">
+                          {item.name}
+                        </span>
+                        <span className="text-[#ce2a34] font-bold ml-2">
+                          x{item.quantity}
+                        </span>
+                        {item.variant?.size_label && (
+                          <p className="text-xs text-gray-500 font-mono mt-1">
+                            {item.variant.size_label}
+                          </p>
+                        )}
+                      </div>
+                      <span className="font-mono font-bold">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center pt-3 mt-3 border-t border-gray-300 font-oswald uppercase text-lg">
+                    <span>Total Paid</span>
+                    <span className="text-[#ce2a34]">
+                      ${selectedOrder.total_amount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <h4 className="font-oswald uppercase text-gray-400 text-sm mb-3 border-b border-gray-100 pb-1">
+                  Action Center
+                </h4>
+                <div className="bg-white p-5 rounded border border-gray-200 space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">
+                      Status:
+                    </span>
+                    {getStatusBadge(selectedOrder.status)}
+                  </div>
+
+                  {/* APPROVE BUTTON */}
+                  {selectedOrder.status === "pending" && (
+                    <button
+                      onClick={() =>
+                        handleUpdateStatus(selectedOrder.id, "processing")
+                      }
+                      disabled={isUpdating}
+                      className="w-full bg-[#1b1b1b] text-white py-3 rounded font-oswald uppercase tracking-widest text-sm hover:bg-[#3b82f6] transition-colors flex justify-center items-center gap-2 shadow-md"
+                    >
+                      {isUpdating ? (
+                        <Loader className="animate-spin" size={18} />
+                      ) : (
+                        <>
+                          <CheckCircle size={18} /> Approve Payment
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {/* SHIP BUTTON */}
+                  {selectedOrder.status === "processing" && (
+                    <div className="space-y-3 pt-2">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block">
+                        Tracking Number (AusPost)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. AP12345678"
+                        value={trackingInput}
+                        onChange={(e) => setTrackingInput(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-[#ce2a34]"
+                      />
+                      <button
+                        onClick={() =>
+                          handleUpdateStatus(selectedOrder.id, "shipped")
+                        }
+                        disabled={isUpdating || !trackingInput}
+                        className="w-full bg-[#ce2a34] text-white py-3 rounded font-oswald uppercase tracking-widest text-sm hover:bg-green-600 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-md"
+                      >
+                        {isUpdating ? (
+                          <Loader className="animate-spin" size={18} />
+                        ) : (
+                          <>
+                            <Truck size={18} /> Mark Shipped & Email Customer
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {selectedOrder.status === "shipped" && (
+                    <div className="bg-green-50 text-green-700 p-4 rounded text-sm text-center border border-green-200">
+                      <CheckCircle size={24} className="mx-auto mb-2" />
+                      <span className="font-bold uppercase tracking-widest block mb-1">
+                        Order Dispatched
+                      </span>
+                      <span className="font-mono bg-white px-2 py-1 rounded border border-green-100 mt-2 inline-block">
+                        Trk: {selectedOrder.tracking_number || "N/A"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
