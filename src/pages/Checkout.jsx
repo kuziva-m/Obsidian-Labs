@@ -40,8 +40,6 @@ export default function Checkout() {
     postcode: "",
   });
 
-  const [shippingMethod, setShippingMethod] = useState("standard");
-
   useEffect(() => {
     if (!cart || cart.length === 0) {
       navigate("/shop");
@@ -61,11 +59,13 @@ export default function Checkout() {
     }
   };
 
-  const getVariantLabel = (v) => {
-    if (!v) return "";
-    if (typeof v === "string") return v;
-    if (typeof v === "object") return v.size_label || "Option";
-    return String(v);
+  // Improved to catch nested variants from your specific Shop/Cart implementation
+  const getVariantLabel = (item) => {
+    if (item.variants && item.variants.length > 0)
+      return item.variants[0].size_label;
+    if (item.sizeLabel) return item.sizeLabel;
+    if (item.variant && item.variant.size_label) return item.variant.size_label;
+    return "";
   };
 
   const handleCopy = (text, type) => {
@@ -74,57 +74,41 @@ export default function Checkout() {
     setTimeout(() => setCopied(""), 2000);
   };
 
-  // --- SHIPPING CALCULATIONS ---
-  const isStandardFree = cartTotal >= 150;
-  const isExpressFree = cartTotal >= 250;
-
-  let shippingCost = 0;
-  let shippingLabel = "Free";
-
-  if (shippingMethod === "express") {
-    shippingCost = isExpressFree ? 0 : 15.0;
-    shippingLabel = isExpressFree ? "Free" : "$15.00";
-  } else {
-    shippingCost = isStandardFree ? 0 : 10.0;
-    shippingLabel = isStandardFree ? "Free" : "$10.00";
-  }
-
+  // --- SHIPPING CALCULATIONS (EXPRESS ONLY) ---
+  const isExpressFree = cartTotal >= 150;
+  const shippingCost = isExpressFree ? 0 : 14.99;
+  const shippingLabel = isExpressFree ? "Free" : "$14.99";
   const estimatedTotal = cartTotal + shippingCost;
 
   // --- FINAL SUBMIT ---
   const submitOrder = async (e) => {
     e.preventDefault();
-
-    if (!receiptFile) {
-      setError(
-        "Please upload a screenshot of your payment receipt to complete your order.",
-      );
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
     try {
-      // 1. Upload the Receipt Image
-      const fileExt = receiptFile.name.split(".").pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      let receiptUrl = "No screenshot provided";
 
-      const { error: uploadError } = await supabase.storage
-        .from("payment-proofs")
-        .upload(fileName, receiptFile);
+      // 1. Upload the Receipt Image IF provided
+      if (receiptFile) {
+        const fileExt = receiptFile.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-      if (uploadError)
-        throw new Error(
-          "Failed to upload receipt. Please ensure the file is a valid image.",
-        );
+        const { error: uploadError } = await supabase.storage
+          .from("payment-proofs")
+          .upload(fileName, receiptFile);
 
-      const { data: publicUrlData } = supabase.storage
-        .from("payment-proofs")
-        .getPublicUrl(fileName);
+        if (uploadError)
+          throw new Error(
+            "Failed to upload receipt. Please ensure the file is a valid image.",
+          );
 
-      const receiptUrl = publicUrlData.publicUrl;
+        const { data: publicUrlData } = supabase.storage
+          .from("payment-proofs")
+          .getPublicUrl(fileName);
+
+        receiptUrl = publicUrlData.publicUrl;
+      }
 
       // 2. Insert Order
       const orderPayload = {
@@ -133,7 +117,7 @@ export default function Checkout() {
         customer_email: formData.email,
         total_amount: estimatedTotal,
         shipping_cost: shippingCost,
-        shipping_method: shippingMethod === "express" ? "Express" : "Standard",
+        shipping_method: "Express",
         shipping_address: formData,
         items: cart,
         receipt_url: receiptUrl,
@@ -150,7 +134,7 @@ export default function Checkout() {
         const emailItems = cart.map((item) => ({
           name: item.name,
           quantity: item.quantity,
-          size: getVariantLabel(item.variant),
+          size: getVariantLabel(item),
         }));
 
         // A. Customer Email
@@ -161,29 +145,33 @@ export default function Checkout() {
             orderId: orderId,
             status: "custom",
             message:
-              "Thank you for your order! We have received your payment proof. Your order is currently under review and we will notify you as soon as your payment is confirmed and your package is dispatched.",
+              "Thank you for your order! Your order is currently under review. If you haven't transferred your payment yet, please follow the bank instructions on the site. We will notify you as soon as your payment is confirmed and your package is dispatched.",
             items: emailItems,
             address: formData,
           },
         });
 
-        // B. Admin Email (Updated to your Obsidian email)
+        // B. Admin Email
         const adminHtml = `
           <div style="font-family: Arial, sans-serif;">
             <h2 style="color: #ce2a34; text-transform: uppercase;">🚨 New Order: #${shortRef}</h2>
             <p><strong>Customer:</strong> ${formData.name} (<a href="mailto:${formData.email}">${formData.email}</a>)</p>
             <p><strong>Total:</strong> $${estimatedTotal.toFixed(2)}</p>
-            <p><strong>Shipping:</strong> ${shippingMethod === "express" ? "Express" : "Standard"}</p>
+            <p><strong>Shipping:</strong> Express</p>
             <br/>
             <p><strong>Payment Proof:</strong></p>
-            <a href="${receiptUrl}" target="_blank" style="background: #1b1b1b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Receipt</a>
+            ${
+              receiptUrl !== "No screenshot provided"
+                ? `<a href="${receiptUrl}" target="_blank" style="background: #1b1b1b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Receipt</a>`
+                : `<span style="color: #ef4444; font-weight: bold; padding: 10px 0; display: inline-block;">⚠️ NO SCREENSHOT PROVIDED</span>`
+            }
           </div>
         `;
 
         await supabase.functions.invoke("send-email", {
           body: {
             to: "obsidianlabsau@gmail.com",
-            subject: `🚨 Payment Uploaded! Order #${shortRef}`,
+            subject: `🚨 New Order Received! #${shortRef}`,
             html: adminHtml,
           },
         });
@@ -222,8 +210,8 @@ export default function Checkout() {
               Secure Checkout
             </h1>
             <p className="text-gray-500 font-body mb-8">
-              Complete your shipping details, initiate your bank transfer, and
-              upload proof of payment below.
+              Complete your shipping details and initiate your bank transfer
+              below.
             </p>
 
             {error && (
@@ -307,39 +295,25 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* 2. SHIPPING SPEED */}
+              {/* 2. SHIPPING SPEED (EXPRESS ONLY) */}
               <div className="bg-white p-6 md:p-8 rounded shadow-sm border border-gray-200">
                 <h3 className="font-oswald text-xl uppercase text-[#1b1b1b] mb-4 border-b border-gray-100 pb-2 flex items-center gap-2">
                   <Truck size={20} className="text-[#ce2a34]" /> 2. Shipping
                   Method
                 </h3>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div
-                    onClick={() => setShippingMethod("standard")}
-                    className={`flex-1 p-4 rounded cursor-pointer border-2 transition-all ${shippingMethod === "standard" ? "border-[#1b1b1b] bg-[#1b1b1b] text-white shadow-md" : "border-gray-200 bg-gray-50 text-[#1b1b1b] hover:border-gray-400"}`}
+                <div className="p-4 rounded border-2 border-[#1b1b1b] bg-[#1b1b1b] text-white flex justify-between items-center shadow-md">
+                  <span className="block font-oswald uppercase tracking-wide text-lg">
+                    Express Post
+                  </span>
+                  <span
+                    className={
+                      isExpressFree
+                        ? "text-green-400 font-bold"
+                        : "text-gray-300"
+                    }
                   >
-                    <span className="block font-oswald uppercase tracking-wide text-lg mb-1">
-                      Standard
-                    </span>
-                    <span
-                      className={`text-sm ${shippingMethod === "standard" ? "text-gray-300" : "text-gray-500"}`}
-                    >
-                      {isStandardFree ? "Free (Over $150)" : "$10.00"}
-                    </span>
-                  </div>
-                  <div
-                    onClick={() => setShippingMethod("express")}
-                    className={`flex-1 p-4 rounded cursor-pointer border-2 transition-all ${shippingMethod === "express" ? "border-[#ce2a34] bg-[#ce2a34] text-white shadow-md" : "border-gray-200 bg-gray-50 text-[#1b1b1b] hover:border-gray-400"}`}
-                  >
-                    <span className="block font-oswald uppercase tracking-wide text-lg mb-1">
-                      Express Post
-                    </span>
-                    <span
-                      className={`text-sm ${shippingMethod === "express" ? "text-gray-200" : "text-gray-500"}`}
-                    >
-                      {isExpressFree ? "Free (Over $250)" : "$15.00"}
-                    </span>
-                  </div>
+                    {shippingLabel}
+                  </span>
                 </div>
               </div>
 
@@ -425,10 +399,10 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* 4. UPLOAD PROOF */}
+              {/* 4. UPLOAD PROOF (OPTIONAL) */}
               <div className="bg-white p-6 md:p-8 rounded shadow-sm border border-gray-200">
                 <h3 className="font-oswald text-xl uppercase text-[#1b1b1b] mb-4 border-b border-gray-100 pb-2">
-                  4. Upload Proof
+                  4. Upload Proof (Optional)
                 </h3>
 
                 <div
@@ -436,7 +410,6 @@ export default function Checkout() {
                 >
                   <input
                     type="file"
-                    required
                     accept="image/*"
                     onChange={handleFileChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -467,7 +440,7 @@ export default function Checkout() {
                         Upload Payment Screenshot
                       </p>
                       <p className="text-gray-500 text-sm mt-1">
-                        Tap here or drag an image
+                        Tap here or drag an image (if available)
                       </p>
                     </div>
                   )}
@@ -476,7 +449,7 @@ export default function Checkout() {
 
               <button
                 type="submit"
-                disabled={isLoading || !receiptFile}
+                disabled={isLoading}
                 className="w-full bg-[#ce2a34] text-white font-oswald uppercase tracking-widest text-lg py-5 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50 flex justify-center items-center gap-3"
               >
                 {isLoading ? (
@@ -497,9 +470,9 @@ export default function Checkout() {
                 Order Summary
               </h3>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
                 {cart.map((item, i) => {
-                  const safeVariant = getVariantLabel(item.variant);
+                  const safeVariant = getVariantLabel(item);
                   return (
                     <div
                       key={i}
@@ -539,7 +512,7 @@ export default function Checkout() {
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span>Shipping ({shippingMethod})</span>
+                  <span>Shipping (Express)</span>
                   <span
                     className={
                       shippingCost === 0 ? "text-green-600 font-bold" : ""
