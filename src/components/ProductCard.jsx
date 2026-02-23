@@ -12,10 +12,12 @@ export default function ProductCard({ product, loading }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
 
   useEffect(() => {
-    if (sortedVariants.length > 0) {
-      // Try to find the first IN STOCK variant to select by default
-      const firstInStock = sortedVariants.find((v) => v.in_stock !== false);
-      setSelectedVariant(firstInStock || sortedVariants[0]);
+    // If there is only 1 size, select it automatically.
+    // If there are MULTIPLE sizes, leave it null to FORCE the user to select one!
+    if (sortedVariants.length === 1) {
+      setSelectedVariant(sortedVariants[0]);
+    } else if (sortedVariants.length > 1) {
+      setSelectedVariant(null);
     }
   }, [product]);
 
@@ -33,16 +35,40 @@ export default function ProductCard({ product, loading }) {
     );
   }
 
-  // --- STOCK LOGIC ---
+  // --- STOCK & BUY LOGIC ---
   const isProductActive = product.in_stock !== false;
-  const isVariantInStock = selectedVariant?.in_stock !== false;
-  const canBuy = isProductActive && isVariantInStock;
+  const isVariantInStock = selectedVariant
+    ? selectedVariant.in_stock !== false
+    : true;
+  const hasSelected = sortedVariants.length <= 1 || selectedVariant !== null;
+  const canBuy = isProductActive && isVariantInStock && hasSelected;
 
   const displayImage =
     selectedVariant?.image_url ||
     product.image_url ||
     "https://via.placeholder.com/400";
   const isAccessory = product.category === "Accessories";
+
+  // Dynamic Price Display (Shows range if not selected yet)
+  const getPriceDisplay = () => {
+    if (selectedVariant) return `$${selectedVariant.price.toFixed(2)}`;
+    if (sortedVariants.length > 1) {
+      const min = sortedVariants[0].price;
+      const max = sortedVariants[sortedVariants.length - 1].price;
+      return min === max
+        ? `$${min.toFixed(2)}`
+        : `$${min.toFixed(2)} - $${max.toFixed(2)}`;
+    }
+    return "Unavailable";
+  };
+
+  // Dynamic Button Text
+  let buttonText = "Add To Cart";
+  if (!isProductActive) buttonText = "Currently Unavailable";
+  else if (sortedVariants.length > 1 && !selectedVariant)
+    buttonText = "Select Size Required";
+  else if (selectedVariant && selectedVariant.in_stock === false)
+    buttonText = "Out of Stock";
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -63,7 +89,7 @@ export default function ProductCard({ product, loading }) {
 
   return (
     <div
-      className={`bg-white rounded border flex flex-col h-full transition-all duration-300 ${canBuy ? "border-gray-200 hover:shadow-lg hover:-translate-y-1" : "border-gray-100 opacity-80"}`}
+      className={`bg-white rounded border flex flex-col h-full transition-all duration-300 ${isProductActive ? "border-gray-200 hover:shadow-lg hover:-translate-y-1" : "border-gray-100 opacity-80"}`}
     >
       {/* IMAGE CONTAINER */}
       <Link
@@ -71,12 +97,12 @@ export default function ProductCard({ product, loading }) {
         className="relative block h-56 bg-gray-50 rounded-t overflow-hidden group"
       >
         {/* STOCK BADGE */}
-        {!canBuy && (
+        {!isProductActive && (
           <div className="absolute top-3 right-3 bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded z-10 border border-red-200">
             Out of Stock
           </div>
         )}
-        {canBuy && (
+        {isProductActive && (
           <div className="absolute top-3 right-3 bg-[#1b1b1b] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded z-10 shadow-sm">
             In Stock
           </div>
@@ -86,7 +112,7 @@ export default function ProductCard({ product, loading }) {
           src={displayImage}
           alt={`${product.name}`}
           loading="lazy"
-          className={`w-full h-full object-contain p-4 transition-transform duration-500 ${canBuy ? "group-hover:scale-110" : "grayscale opacity-60"}`}
+          className={`w-full h-full object-contain p-4 transition-transform duration-500 ${isProductActive ? "group-hover:scale-110" : "grayscale opacity-60"}`}
         />
       </Link>
 
@@ -114,19 +140,18 @@ export default function ProductCard({ product, loading }) {
           {/* Price Display */}
           <div className="mb-3">
             <span className="font-oswald text-2xl text-[#1b1b1b]">
-              {selectedVariant
-                ? `$${selectedVariant.price.toFixed(2)}`
-                : "Unavailable"}
+              {getPriceDisplay()}
             </span>
           </div>
 
           {/* VARIANT BUTTONS (PILLS) */}
-          {sortedVariants.length > 0 && (
+          {sortedVariants.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {sortedVariants.map((v) => {
                 const isVStock = v.in_stock !== false;
                 return (
                   <button
+                    type="button"
                     key={v.id}
                     onClick={(e) => {
                       e.preventDefault();
@@ -147,6 +172,16 @@ export default function ProductCard({ product, loading }) {
             </div>
           )}
 
+          {/* Single Custom Variant Label (if only 1 exists and it's not named 'Standard') */}
+          {sortedVariants.length === 1 &&
+            sortedVariants[0].size_label !== "Standard" && (
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs font-mono font-bold uppercase tracking-widest rounded border border-gray-200">
+                  {sortedVariants[0].size_label}
+                </span>
+              </div>
+            )}
+
           {/* ADD TO CART BUTTON */}
           <button
             disabled={!canBuy}
@@ -154,16 +189,11 @@ export default function ProductCard({ product, loading }) {
             className={`w-full py-3 rounded font-oswald uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${
               canBuy
                 ? "bg-[#1b1b1b] text-white hover:bg-[#ce2a34] shadow-md active:scale-95"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300"
             }`}
           >
-            {canBuy ? (
-              <>
-                <ShoppingCart size={16} /> Add To Cart
-              </>
-            ) : (
-              "Currently Unavailable"
-            )}
+            {canBuy ? <ShoppingCart size={16} /> : null}
+            {buttonText}
           </button>
         </div>
       </div>
