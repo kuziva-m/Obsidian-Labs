@@ -8,12 +8,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface OrderItem {
-  name: string;
-  quantity: number;
-  size?: string;
-}
-
 const LOGO_URL = "https://obsidianlabs-au.com/assets/obsidian-logo-red.png";
 
 const renderEmailTemplate = (title: string, contentHtml: string) => `
@@ -96,37 +90,37 @@ serve(async (req: Request) => {
       toAddress = [email];
       let title = "";
       let messageBody = "";
+      const shortRef = orderId.slice(0, 8).toUpperCase();
 
       if (status === "custom") {
         title = "Update Regarding Your Order";
-        finalSubject = `Order #${orderId.slice(0, 8)} Confirmation`;
+        finalSubject = `Order #${shortRef} Confirmation`;
         messageBody = message
           ? message.replace(/\n/g, "<br>")
           : "Please check your order details.";
       } else if (status === "processing") {
-        // <--- NEW: PAYMENT APPROVED
         title = "Payment Confirmed";
-        finalSubject = `Payment Confirmed: Order #${orderId.slice(0, 8)}`;
+        finalSubject = `Payment Confirmed: Order #${shortRef}`;
         messageBody =
-          "Good news. We have successfully verified your payment. Your order is now being processed and prepared for dispatch. We will send you another update with your tracking information once your package ships.";
+          "Your payment has been verified and your order is getting ready to ship. We will send you another update with your tracking information once your package ships.";
       } else if (status === "label_created") {
         title = "Shipping Label Created";
-        finalSubject = `Update: Label Created for Order #${orderId.slice(0, 8)}`;
+        finalSubject = `Update: Label Created for Order #${shortRef}`;
         messageBody =
           "Your shipping label has been created. Your package is being prepared and will be dispatched the next business day.";
       } else if (status === "shipped") {
         title = "Your Order Is On The Way";
-        finalSubject = `Shipping Update: Order #${orderId.slice(0, 8)}`;
+        finalSubject = `Shipping Update: Order #${shortRef}`;
         messageBody =
           "Great news. Your order has been packed and dispatched from our Melbourne facility.";
       } else if (status === "delivered") {
         title = "Your Order Has Been Delivered";
-        finalSubject = `Delivered: Order #${orderId.slice(0, 8)}`;
+        finalSubject = `Delivered: Order #${shortRef}`;
         messageBody =
           "Your package has been delivered. We hope you are satisfied with your research compounds.";
       } else {
         title = "Order Update";
-        finalSubject = `Update: Order #${orderId.slice(0, 8)}`;
+        finalSubject = `Update: Order #${shortRef}`;
         messageBody = `Your order status has been updated to: ${status}`;
       }
 
@@ -141,19 +135,29 @@ serve(async (req: Request) => {
             </div>`
           : "";
 
+      // Helper function to safely extract the variant from different payload structures
+      const getVariantInfo = (item: any) => {
+        if (item.size) return item.size;
+        if (item.variant && item.variant.size_label)
+          return item.variant.size_label;
+        if (item.sizeLabel) return item.sizeLabel;
+        return "";
+      };
+
       const itemsListHtml = (items || [])
-        .map(
-          (item: OrderItem) =>
-            `<tr style="border-bottom: 1px solid #f1f5f9;">
-               <td style="padding: 12px 0; color: #1b1b1b; font-weight: bold;">${item.name} ${item.size ? `<span style="color: #64748b; font-weight: normal; font-size: 13px;"> (${item.size})</span>` : ""}</td>
+        .map((item: any) => {
+          const variantStr = getVariantInfo(item);
+          return `<tr style="border-bottom: 1px solid #f1f5f9;">
+               <td style="padding: 12px 0; color: #1b1b1b; font-weight: bold;">${item.name} ${variantStr ? `<span style="color: #64748b; font-weight: normal; font-size: 13px;"> (${variantStr})</span>` : ""}</td>
                <td style="padding: 12px 0; text-align: right; color: #1b1b1b; font-weight: bold;">x${item.quantity}</td>
-             </tr>`,
-        )
+             </tr>`;
+        })
         .join("");
 
       const itemsHtml = itemsListHtml
-        ? `<div style="margin-top: 40px;"><h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; color: #1b1b1b; font-weight: bold; letter-spacing: 1px; border-bottom: 2px solid #ce2a34; padding-bottom: 4px; display: inline-block;">Order Summary</h3><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse: collapse;">${itemsListHtml}</table></div>`
+        ? `<div style="margin-top: 40px;"><h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; color: #1b1b1b; font-weight: bold; letter-spacing: 1px; border-bottom: 2px solid #ce2a34; padding-bottom: 4px; display: inline-block;">Order Summary (#${shortRef})</h3><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse: collapse;">${itemsListHtml}</table></div>`
         : "";
+
       const addressHtml = address
         ? `<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9;"><p style="margin: 0; font-size: 14px; color: #64748b; line-height: 1.5;"><strong style="color: #1b1b1b;">Shipping to:</strong><br/>${address.line1 || ""}<br/>${address.city || ""}, ${address.state || ""} ${address.postcode || address.postal_code || ""}</p></div>`
         : "";

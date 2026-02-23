@@ -3,14 +3,14 @@ import { supabase } from "../../lib/supabase";
 import {
   Plus,
   Trash2,
-  Search,
   ChevronDown,
   ChevronUp,
   Package,
   Loader2,
   Upload,
-  Image as ImageIcon,
   Save,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 export default function ProductManager() {
@@ -23,6 +23,7 @@ export default function ProductManager() {
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("Peptides");
   const [newPrice, setNewPrice] = useState("");
+  const [newSize, setNewSize] = useState("Standard");
   const [newStock, setNewStock] = useState(true);
   const [newImage, setNewImage] = useState("");
 
@@ -48,12 +49,8 @@ export default function ProductManager() {
 
     try {
       setUploading(true);
-
-      // 1. Compress Image (Client-side)
       const compressedFile = await compressImage(file);
-
-      // 2. Upload to Supabase
-      const fileExt = "jpg"; // We convert everything to JPG
+      const fileExt = "jpg";
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${fileName}`;
 
@@ -63,7 +60,6 @@ export default function ProductManager() {
 
       if (uploadError) throw uploadError;
 
-      // 3. Get Public URL
       const { data } = supabase.storage
         .from("product-images")
         .getPublicUrl(filePath);
@@ -77,7 +73,6 @@ export default function ProductManager() {
     }
   }
 
-  // Helper: Compress Image using Canvas
   function compressImage(file) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -91,17 +86,14 @@ export default function ProductManager() {
           const scaleSize = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
-
           const ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
           canvas.toBlob(
-            (blob) => {
-              resolve(new File([blob], file.name, { type: "image/jpeg" }));
-            },
+            (blob) =>
+              resolve(new File([blob], file.name, { type: "image/jpeg" })),
             "image/jpeg",
             0.8,
-          ); // 80% Quality
+          );
         };
       };
     });
@@ -127,7 +119,7 @@ export default function ProductManager() {
     // 2. Create Default Variant
     const { error: variantError } = await supabase.from("variants").insert({
       product_id: prod.id,
-      size_label: "Standard",
+      size_label: newSize,
       price: parseFloat(newPrice),
     });
 
@@ -136,31 +128,36 @@ export default function ProductManager() {
     setIsAdding(false);
     setNewName("");
     setNewPrice("");
+    setNewSize("Standard");
     setNewImage("");
     fetchProducts();
   }
 
   async function handleDelete(id) {
-    if (!confirm("Delete product and all variants?")) return;
+    if (
+      !window.confirm("Delete product and all variants? This cannot be undone.")
+    )
+      return;
     await supabase.from("products").delete().eq("id", id);
     fetchProducts();
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="bg-white rounded shadow-sm border border-gray-200">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--baltic-sea)]">
-            Inventory
-          </h1>
-        </div>
-        <button onClick={() => setIsAdding(!isAdding)} className="btn-primary">
+      <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+        <h2 className="font-oswald text-xl md:text-2xl uppercase text-[#1b1b1b]">
+          Inventory Management
+        </h2>
+        <button
+          onClick={() => setIsAdding(!isAdding)}
+          className="bg-[#ce2a34] text-white px-4 py-2 rounded font-oswald uppercase tracking-widest text-sm hover:bg-[#1b1b1b] transition-colors flex items-center gap-2"
+        >
           {isAdding ? (
             "Cancel"
           ) : (
             <>
-              <Plus size={18} /> Add Product
+              <Plus size={16} /> Add Product
             </>
           )}
         </button>
@@ -168,176 +165,333 @@ export default function ProductManager() {
 
       {/* Add Product Form */}
       {isAdding && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
-          <h3 className="font-bold text-lg mb-4">New Product</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <input
-              placeholder="Product Name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="input-field"
-            />
-            <select
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              className="input-field bg-white"
-            >
-              <option>Peptides</option>
-              <option>Peptide Blends</option>
-              <option>Accessories</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Price (AUD)"
-              value={newPrice}
-              onChange={(e) => setNewPrice(e.target.value)}
-              className="input-field"
-            />
+        <div className="p-6 bg-gray-50 border-b border-gray-200">
+          <h3 className="font-oswald uppercase text-[#1b1b1b] text-lg mb-4">
+            New Product Details
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 font-body text-sm">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Product Name
+              </label>
+              <input
+                placeholder="e.g. BPC-157"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Category
+              </label>
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
+              >
+                <option>Peptides</option>
+                <option>Peptide Blends</option>
+                <option>Accessories</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Size / Variant
+              </label>
+              <input
+                placeholder="e.g. 5mg, 10ml, Standard"
+                value={newSize}
+                onChange={(e) => setNewSize(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Price (AUD)
+              </label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none"
+              />
+            </div>
 
             {/* Image Upload Input */}
-            <div className="flex items-center gap-3">
-              <input
-                placeholder="Image URL (optional)"
-                value={newImage}
-                onChange={(e) => setNewImage(e.target.value)}
-                className="input-field flex-1"
-              />
-              <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 p-3 rounded-lg border border-gray-300 transition-colors">
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const url = await handleImageUpload(e.target.files[0]);
-                    if (url) setNewImage(url);
-                  }}
-                />
-                {uploading ? (
-                  <Loader2 className="animate-spin" size={20} />
-                ) : (
-                  <Upload size={20} />
-                )}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Product Image
               </label>
+              <div className="flex items-center gap-3">
+                <input
+                  placeholder="Paste Image URL or Upload..."
+                  value={newImage}
+                  onChange={(e) => setNewImage(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none"
+                />
+                <label className="cursor-pointer bg-[#1b1b1b] text-white hover:bg-[#ce2a34] p-3 rounded border border-transparent transition-colors flex items-center justify-center min-w-[48px]">
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const url = await handleImageUpload(e.target.files[0]);
+                      if (url) setNewImage(url);
+                    }}
+                  />
+                  {uploading ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    <Upload size={20} />
+                  )}
+                </label>
+              </div>
             </div>
           </div>
 
+          <div className="flex items-center gap-2 mb-6">
+            <input
+              type="checkbox"
+              id="stockStatus"
+              checked={newStock}
+              onChange={(e) => setNewStock(e.target.checked)}
+              className="w-4 h-4 accent-[#ce2a34]"
+            />
+            <label
+              htmlFor="stockStatus"
+              className="text-sm font-bold text-gray-700 uppercase"
+            >
+              Product is In Stock
+            </label>
+          </div>
+
           {newImage && (
-            <div className="mb-4">
+            <div className="mb-6 p-2 bg-white border border-gray-200 rounded inline-block">
               <img
                 src={newImage}
                 alt="Preview"
-                className="h-20 w-20 object-cover rounded border border-gray-200"
+                className="h-24 w-24 object-contain"
               />
             </div>
           )}
 
-          <div className="flex justify-end">
-            <button onClick={handleCreate} className="btn-primary">
-              Save Product
+          <div className="flex justify-end border-t border-gray-200 pt-4">
+            <button
+              onClick={handleCreate}
+              className="bg-[#ce2a34] text-white px-6 py-3 rounded font-oswald uppercase tracking-widest hover:bg-[#1b1b1b] transition-colors flex items-center gap-2 shadow-md"
+            >
+              <Save size={18} /> Save Product
             </button>
           </div>
         </div>
       )}
 
       {/* Product List */}
-      <div className="space-y-4">
-        {products.map((product) => (
-          <ProductRow
-            key={product.id}
-            product={product}
-            onDelete={() => handleDelete(product.id)}
-            handleUpload={handleImageUpload}
-          />
-        ))}
+      <div className="p-4 md:p-6 space-y-4">
+        {loading ? (
+          <div className="flex justify-center p-12">
+            <Loader2 className="animate-spin text-[#ce2a34]" size={32} />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center p-12 text-gray-500 font-mono">
+            No products found.
+          </div>
+        ) : (
+          products.map((product) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              onDelete={() => handleDelete(product.id)}
+              handleUpload={handleImageUpload}
+              onRefresh={fetchProducts}
+            />
+          ))
+        )}
       </div>
     </div>
   );
 }
 
 // --- SUB-COMPONENT: Product Row ---
-function ProductRow({ product, onDelete, handleUpload }) {
+function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
   const [expanded, setExpanded] = useState(false);
-  const [name, setName] = useState(product.name);
-  const [image, setImage] = useState(product.image_url);
+  const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const mainPrice = product.variants?.[0]?.price || 0;
+  // Form States (Pre-filled with product data)
+  const [name, setName] = useState(product.name);
+  const [category, setCategory] = useState(product.category);
+  const [inStock, setInStock] = useState(product.in_stock);
+  const [image, setImage] = useState(product.image_url);
+
+  // Variant States (Assumes 1 main variant for now)
+  const variantId = product.variants?.[0]?.id;
+  const [price, setPrice] = useState(product.variants?.[0]?.price || 0);
+  const [sizeLabel, setSizeLabel] = useState(
+    product.variants?.[0]?.size_label || "Standard",
+  );
 
   async function handleSave() {
-    await supabase
-      .from("products")
-      .update({ name, image_url: image })
-      .eq("id", product.id);
-    alert("Saved!");
+    setIsSaving(true);
+    try {
+      // 1. Update Product Table
+      const { error: prodErr } = await supabase
+        .from("products")
+        .update({
+          name,
+          category,
+          in_stock: inStock,
+          image_url: image,
+        })
+        .eq("id", product.id);
+
+      if (prodErr) throw prodErr;
+
+      // 2. Update Variant Table
+      if (variantId) {
+        const { error: varErr } = await supabase
+          .from("variants")
+          .update({
+            price: parseFloat(price),
+            size_label: sizeLabel,
+          })
+          .eq("id", variantId);
+        if (varErr) throw varErr;
+      }
+
+      onRefresh();
+      setExpanded(false);
+    } catch (err) {
+      alert("Error saving: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="p-4 flex items-center justify-between">
+      {/* ROW HEADER (Always Visible) */}
+      <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden border border-gray-100">
+          <div className="w-16 h-16 bg-gray-50 rounded flex items-center justify-center overflow-hidden border border-gray-200 shrink-0">
             {image ? (
               <img
                 src={image}
                 alt={name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-1"
               />
             ) : (
-              <Package size={20} className="text-gray-400" />
+              <Package size={24} className="text-gray-300" />
             )}
           </div>
           <div>
-            <h4 className="font-bold text-[var(--baltic-sea)]">{name}</h4>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {product.category}
-            </span>
+            <h4 className="font-oswald text-lg text-[#1b1b1b] uppercase tracking-wide leading-none mb-2">
+              {name}
+            </h4>
+            <div className="flex gap-2">
+              <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded uppercase">
+                {category}
+              </span>
+              <span
+                className={`text-[10px] font-mono font-bold px-2 py-1 rounded uppercase flex items-center gap-1 ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+              >
+                {inStock ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                {inStock ? "In Stock" : "Out of Stock"}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="font-bold text-[var(--brick-red)]">
-            ${mainPrice}
-          </span>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-2 text-gray-400 hover:text-black"
-          >
-            {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-2 text-red-400 hover:text-red-600"
-          >
-            <Trash2 size={20} />
-          </button>
+        <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
+          <div className="text-right">
+            <span className="text-xs text-gray-400 font-mono block leading-none mb-1">
+              {sizeLabel}
+            </span>
+            <span className="font-oswald text-xl text-[#ce2a34]">
+              ${parseFloat(price).toFixed(2)}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-2 bg-gray-100 text-gray-600 rounded hover:bg-[#1b1b1b] hover:text-white transition-colors"
+            >
+              {expanded ? <ChevronUp size={20} /> : <EditIcon />}
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-2 bg-red-50 text-red-500 rounded hover:bg-red-600 hover:text-white transition-colors"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* EDIT MENU (Expanded) */}
       {expanded && (
-        <div className="bg-gray-50 p-6 border-t border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="bg-gray-50 p-4 md:p-6 border-t border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 font-body text-sm">
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1">
-                NAME
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Product Name
               </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input-field bg-white"
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1">
-                IMAGE
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
+              >
+                <option>Peptides</option>
+                <option>Peptide Blends</option>
+                <option>Accessories</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Variant / Size Label
+              </label>
+              <input
+                value={sizeLabel}
+                onChange={(e) => setSizeLabel(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Price (AUD)
+              </label>
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                Image URL
               </label>
               <div className="flex gap-2">
                 <input
                   value={image || ""}
                   onChange={(e) => setImage(e.target.value)}
-                  className="input-field bg-white flex-1"
+                  className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white flex-1"
                   placeholder="https://..."
                 />
-                <label className="bg-white border border-gray-300 p-2 rounded cursor-pointer hover:bg-gray-100 flex items-center justify-center w-12">
+                <label className="bg-[#1b1b1b] text-white p-3 rounded cursor-pointer hover:bg-[#ce2a34] transition-colors flex items-center justify-center w-12 shrink-0">
                   <input
                     type="file"
                     hidden
@@ -350,22 +504,67 @@ function ProductRow({ product, onDelete, handleUpload }) {
                     }}
                   />
                   {uploading ? (
-                    <Loader2 className="animate-spin" size={16} />
+                    <Loader2 className="animate-spin" size={18} />
                   ) : (
-                    <Upload size={16} />
+                    <Upload size={18} />
                   )}
                 </label>
               </div>
             </div>
           </div>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 bg-[var(--baltic-sea)] text-white px-4 py-2 rounded hover:bg-black text-sm font-bold"
-          >
-            <Save size={16} /> Save Changes
-          </button>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-gray-200 pt-4">
+            <div className="flex items-center gap-2 bg-white p-3 border border-gray-200 rounded w-full md:w-auto">
+              <input
+                type="checkbox"
+                id={`stock-${product.id}`}
+                checked={inStock}
+                onChange={(e) => setInStock(e.target.checked)}
+                className="w-4 h-4 accent-[#ce2a34]"
+              />
+              <label
+                htmlFor={`stock-${product.id}`}
+                className="text-sm font-bold text-gray-700 uppercase cursor-pointer"
+              >
+                Product is In Stock
+              </label>
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#ce2a34] text-white px-6 py-3 rounded hover:bg-[#1b1b1b] text-sm font-oswald uppercase tracking-widest transition-colors shadow-md disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <Save size={16} />
+              )}
+              {isSaving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+// Simple Edit Icon SVG for the button
+function EditIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20h9"></path>
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+    </svg>
   );
 }
