@@ -13,7 +13,9 @@ export default function ProductCard({ product, loading }) {
 
   useEffect(() => {
     if (sortedVariants.length > 0) {
-      setSelectedVariant(sortedVariants[0]);
+      // Try to find the first IN STOCK variant to select by default
+      const firstInStock = sortedVariants.find((v) => v.in_stock !== false);
+      setSelectedVariant(firstInStock || sortedVariants[0]);
     }
   }, [product]);
 
@@ -32,8 +34,9 @@ export default function ProductCard({ product, loading }) {
   }
 
   // --- STOCK LOGIC ---
-  const isProductActive = product.in_stock !== false; // Reads from your Admin Panel toggle
-  const canBuy = isProductActive;
+  const isProductActive = product.in_stock !== false;
+  const isVariantInStock = selectedVariant?.in_stock !== false;
+  const canBuy = isProductActive && isVariantInStock;
 
   const displayImage =
     selectedVariant?.image_url ||
@@ -60,7 +63,7 @@ export default function ProductCard({ product, loading }) {
 
   return (
     <div
-      className={`bg-white rounded border flex flex-col h-full transition-all duration-300 ${canBuy ? "border-gray-200 hover:shadow-lg hover:-translate-y-1" : "border-gray-100 opacity-75"}`}
+      className={`bg-white rounded border flex flex-col h-full transition-all duration-300 ${canBuy ? "border-gray-200 hover:shadow-lg hover:-translate-y-1" : "border-gray-100 opacity-80"}`}
     >
       {/* IMAGE CONTAINER */}
       <Link
@@ -83,7 +86,7 @@ export default function ProductCard({ product, loading }) {
           src={displayImage}
           alt={`${product.name}`}
           loading="lazy"
-          className={`w-full h-full object-contain p-4 transition-transform duration-500 ${canBuy ? "group-hover:scale-110" : "grayscale"}`}
+          className={`w-full h-full object-contain p-4 transition-transform duration-500 ${canBuy ? "group-hover:scale-110" : "grayscale opacity-60"}`}
         />
       </Link>
 
@@ -107,36 +110,62 @@ export default function ProductCard({ product, loading }) {
           </div>
         )}
 
-        {/* Variant/Size & Price */}
-        <div className="mt-auto pt-4 border-t border-gray-100 flex items-end justify-between mb-4">
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-mono uppercase tracking-widest mb-1">
-              {selectedVariant ? selectedVariant.size_label : "Option"}
-            </span>
+        <div className="mt-auto pt-4 border-t border-gray-100">
+          {/* Price Display */}
+          <div className="mb-3">
             <span className="font-oswald text-2xl text-[#1b1b1b]">
-              ${selectedVariant ? selectedVariant.price.toFixed(2) : "0.00"}
+              {selectedVariant
+                ? `$${selectedVariant.price.toFixed(2)}`
+                : "Unavailable"}
             </span>
           </div>
-        </div>
 
-        {/* ADD TO CART BUTTON */}
-        <button
-          disabled={!canBuy}
-          onClick={handleAddToCart}
-          className={`w-full py-3 rounded font-oswald uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${
-            canBuy
-              ? "bg-[#1b1b1b] text-white hover:bg-[#ce2a34] shadow-md active:scale-95"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {canBuy ? (
-            <>
-              <ShoppingCart size={16} /> Add To Cart
-            </>
-          ) : (
-            "Currently Unavailable"
+          {/* VARIANT BUTTONS (PILLS) */}
+          {sortedVariants.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {sortedVariants.map((v) => {
+                const isVStock = v.in_stock !== false;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedVariant(v);
+                    }}
+                    disabled={!isVStock}
+                    className={`px-3 py-1 text-xs font-mono font-bold uppercase tracking-widest rounded border transition-all ${
+                      selectedVariant?.id === v.id
+                        ? "bg-[#1b1b1b] text-white border-[#1b1b1b]"
+                        : "bg-white text-gray-600 border-gray-300 hover:border-[#ce2a34] hover:text-[#ce2a34]"
+                    } ${!isVStock ? "opacity-40 cursor-not-allowed line-through" : ""}`}
+                    title={!isVStock ? "Out of Stock" : ""}
+                  >
+                    {v.size_label}
+                  </button>
+                );
+              })}
+            </div>
           )}
-        </button>
+
+          {/* ADD TO CART BUTTON */}
+          <button
+            disabled={!canBuy}
+            onClick={handleAddToCart}
+            className={`w-full py-3 rounded font-oswald uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${
+              canBuy
+                ? "bg-[#1b1b1b] text-white hover:bg-[#ce2a34] shadow-md active:scale-95"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            {canBuy ? (
+              <>
+                <ShoppingCart size={16} /> Add To Cart
+              </>
+            ) : (
+              "Currently Unavailable"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
