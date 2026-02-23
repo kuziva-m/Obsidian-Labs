@@ -19,7 +19,7 @@ export default function ProductManager() {
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Form State
+  // Form State (For creating a NEW product)
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("Peptides");
   const [newPrice, setNewPrice] = useState("");
@@ -121,6 +121,7 @@ export default function ProductManager() {
       product_id: prod.id,
       size_label: newSize,
       price: parseFloat(newPrice),
+      in_stock: true,
     });
 
     if (variantError) alert("Error creating variant: " + variantError.message);
@@ -135,7 +136,7 @@ export default function ProductManager() {
 
   async function handleDelete(id) {
     if (
-      !window.confirm("Delete product and all variants? This cannot be undone.")
+      !window.confirm("Delete product and ALL variants? This cannot be undone.")
     )
       return;
     await supabase.from("products").delete().eq("id", id);
@@ -197,7 +198,7 @@ export default function ProductManager() {
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                Size / Variant
+                Initial Size / Variant
               </label>
               <input
                 placeholder="e.g. 5mg, 10ml, Standard"
@@ -208,7 +209,7 @@ export default function ProductManager() {
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                Price (AUD)
+                Initial Price (AUD)
               </label>
               <input
                 type="number"
@@ -320,23 +321,53 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Form States (Pre-filled with product data)
+  // Main Product States
   const [name, setName] = useState(product.name);
   const [category, setCategory] = useState(product.category);
-  const [inStock, setInStock] = useState(product.in_stock);
+  const [inStock, setInStock] = useState(product.in_stock !== false);
   const [image, setImage] = useState(product.image_url);
 
-  // Variant States (Assumes 1 main variant for now)
-  const variantId = product.variants?.[0]?.id;
-  const [price, setPrice] = useState(product.variants?.[0]?.price || 0);
-  const [sizeLabel, setSizeLabel] = useState(
-    product.variants?.[0]?.size_label || "Standard",
-  );
+  // Variant States (Array of variant objects)
+  const [localVariants, setLocalVariants] = useState([]);
+  const [variantsToDelete, setVariantsToDelete] = useState([]);
+
+  // Reset local state if product changes (e.g. after refresh)
+  useEffect(() => {
+    setName(product.name);
+    setCategory(product.category);
+    setInStock(product.in_stock !== false);
+    setImage(product.image_url);
+    setLocalVariants(product.variants?.map((v) => ({ ...v })) || []);
+    setVariantsToDelete([]);
+  }, [product]);
+
+  // Variant Helpers
+  const addVariant = () => {
+    setLocalVariants([
+      ...localVariants,
+      { size_label: "", price: 0, in_stock: true },
+    ]);
+  };
+
+  const updateVariant = (index, field, value) => {
+    const updated = [...localVariants];
+    updated[index][field] = value;
+    setLocalVariants(updated);
+  };
+
+  const removeVariant = (index) => {
+    const variantToRemove = localVariants[index];
+    if (variantToRemove.id) {
+      setVariantsToDelete([...variantsToDelete, variantToRemove.id]);
+    }
+    const updated = localVariants.filter((_, i) => i !== index);
+    setLocalVariants(updated);
+  };
 
   async function handleSave() {
     setIsSaving(true);
     try {
-      // 1. Update Product Table
+      // 1. Update Product Details
       const { error: prodErr } = await supabase
         .from("products")
         .update({
@@ -349,16 +380,47 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
 
       if (prodErr) throw prodErr;
 
-      // 2. Update Variant Table
-      if (variantId) {
-        const { error: varErr } = await supabase
+      // 2. Delete removed variants
+      if (variantsToDelete.length > 0) {
+        const { error: delErr } = await supabase
           .from("variants")
-          .update({
-            price: parseFloat(price),
-            size_label: sizeLabel,
-          })
-          .eq("id", variantId);
-        if (varErr) throw varErr;
+          .delete()
+          .in("id", variantsToDelete);
+        if (delErr) throw delErr;
+      }
+
+      // 3. Upsert Variants
+      const newVariants = [];
+      for (const v of localVariants) {
+        if (!v.size_label || isNaN(v.price)) continue; // skip invalid entries
+
+        if (v.id) {
+          // Update existing
+          const { error: updErr } = await supabase
+            .from("variants")
+            .update({
+              size_label: v.size_label,
+              price: parseFloat(v.price),
+              in_stock: v.in_stock !== false,
+            })
+            .eq("id", v.id);
+          if (updErr) throw updErr;
+        } else {
+          // Insert new
+          newVariants.push({
+            product_id: product.id,
+            size_label: v.size_label,
+            price: parseFloat(v.price),
+            in_stock: v.in_stock !== false,
+          });
+        }
+      }
+
+      if (newVariants.length > 0) {
+        const { error: insErr } = await supabase
+          .from("variants")
+          .insert(newVariants);
+        if (insErr) throw insErr;
       }
 
       onRefresh();
@@ -369,6 +431,15 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
       setIsSaving(false);
     }
   }
+
+  // Calculate display price
+  const prices = localVariants.map((v) => v.price) || [0];
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+  const priceDisplay =
+    minPrice === maxPrice
+      ? `$${minPrice.toFixed(2)}`
+      : `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
@@ -390,12 +461,19 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
             <h4 className="font-oswald text-lg text-[#1b1b1b] uppercase tracking-wide leading-none mb-2">
               {name}
             </h4>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded uppercase">
                 {category}
               </span>
+              <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded uppercase">
+                {localVariants.length} Variant(s)
+              </span>
               <span
-                className={`text-[10px] font-mono font-bold px-2 py-1 rounded uppercase flex items-center gap-1 ${inStock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                className={`text-[10px] font-mono font-bold px-2 py-1 rounded uppercase flex items-center gap-1 ${
+                  inStock
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
               >
                 {inStock ? <CheckCircle size={10} /> : <XCircle size={10} />}
                 {inStock ? "In Stock" : "Out of Stock"}
@@ -406,11 +484,8 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
 
         <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
           <div className="text-right">
-            <span className="text-xs text-gray-400 font-mono block leading-none mb-1">
-              {sizeLabel}
-            </span>
             <span className="font-oswald text-xl text-[#ce2a34]">
-              ${parseFloat(price).toFixed(2)}
+              {prices.length > 0 ? priceDisplay : "No Variants"}
             </span>
           </div>
           <div className="flex gap-2">
@@ -433,6 +508,7 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
       {/* EDIT MENU (Expanded) */}
       {expanded && (
         <div className="bg-gray-50 p-4 md:p-6 border-t border-gray-200">
+          {/* Main Product Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 font-body text-sm">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
@@ -458,28 +534,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
                 <option>Accessories</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                Variant / Size Label
-              </label>
-              <input
-                value={sizeLabel}
-                onChange={(e) => setSizeLabel(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                Price (AUD)
-              </label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
-              />
-            </div>
-
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                 Image URL
@@ -513,8 +567,87 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
             </div>
           </div>
 
+          {/* Variants Section */}
+          <div className="border-t border-gray-200 pt-6 mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-oswald uppercase text-[#1b1b1b] text-sm tracking-wide">
+                Variants / Sizes
+              </h4>
+              <button
+                onClick={addVariant}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded flex items-center gap-1 transition-colors"
+              >
+                <Plus size={14} /> Add Variant
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {localVariants.map((v, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 bg-white p-3 border border-gray-200 rounded shadow-sm"
+                >
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
+                      Label / Size
+                    </label>
+                    <input
+                      value={v.size_label}
+                      onChange={(e) =>
+                        updateVariant(i, "size_label", e.target.value)
+                      }
+                      placeholder="e.g. 5mg"
+                      className="w-full p-2 border border-gray-300 rounded text-sm focus:border-[#ce2a34] outline-none"
+                    />
+                  </div>
+                  <div className="w-full sm:w-32">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
+                      Price (AUD)
+                    </label>
+                    <input
+                      type="number"
+                      value={v.price}
+                      onChange={(e) =>
+                        updateVariant(i, "price", e.target.value)
+                      }
+                      className="w-full p-2 border border-gray-300 rounded text-sm focus:border-[#ce2a34] outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 sm:pt-4">
+                    <input
+                      type="checkbox"
+                      checked={v.in_stock !== false}
+                      onChange={(e) =>
+                        updateVariant(i, "in_stock", e.target.checked)
+                      }
+                      className="w-4 h-4 accent-[#ce2a34]"
+                    />
+                    <span className="text-xs font-bold text-gray-600 uppercase">
+                      In Stock
+                    </span>
+                  </div>
+                  <div className="pt-1 sm:pt-4 flex justify-end">
+                    <button
+                      onClick={() => removeVariant(i)}
+                      className="p-2 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                      title="Remove Variant"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {localVariants.length === 0 && (
+                <p className="text-xs text-gray-500 font-mono italic">
+                  No variants added. Product will not be purchasable.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Actions */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-gray-200 pt-4">
-            <div className="flex items-center gap-2 bg-white p-3 border border-gray-200 rounded w-full md:w-auto">
+            <div className="flex items-center gap-2 bg-white p-3 border border-gray-200 rounded w-full md:w-auto shadow-sm">
               <input
                 type="checkbox"
                 id={`stock-${product.id}`}
@@ -524,9 +657,9 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
               />
               <label
                 htmlFor={`stock-${product.id}`}
-                className="text-sm font-bold text-gray-700 uppercase cursor-pointer"
+                className="text-sm font-bold text-[#1b1b1b] uppercase cursor-pointer"
               >
-                Product is In Stock
+                Global Product Enabled
               </label>
             </div>
 
@@ -549,7 +682,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
   );
 }
 
-// Simple Edit Icon SVG for the button
 function EditIcon() {
   return (
     <svg
