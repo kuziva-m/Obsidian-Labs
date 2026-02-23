@@ -16,15 +16,28 @@ import "./Quality.css";
 // Reminder: Rename your uploaded WhatsApp images to 1.jpeg, 2.jpeg... etc.
 // and place them in public/assets/coas/
 const COA_IMAGES = [
-  "/assets/coas/1.jpeg",
-  "/assets/coas/2.jpeg",
-  "/assets/coas/3.jpeg",
-  "/assets/coas/4.jpeg",
-  "/assets/coas/5.jpeg",
-  "/assets/coas/6.jpeg",
-  "/assets/coas/7.jpeg",
-  "/assets/coas/8.jpeg",
-  "/assets/coas/9.jpeg",
+  "/assets/coas/1.png",
+  "/assets/coas/2.png",
+  "/assets/coas/3.png",
+  "/assets/coas/4.png",
+  "/assets/coas/5.png",
+  "/assets/coas/6.png",
+  "/assets/coas/7.png",
+  "/assets/coas/8.png",
+  "/assets/coas/9.png",
+  "/assets/coas/10.png",
+  "/assets/coas/11.png",
+  "/assets/coas/12.png",
+  "/assets/coas/13.png",
+  "/assets/coas/14.png",
+  "/assets/coas/15.png",
+  "/assets/coas/16.png",
+  "/assets/coas/17.png",
+  "/assets/coas/18.png",
+  "/assets/coas/19.png",
+  "/assets/coas/20.png",
+  "/assets/coas/21.png",
+  "/assets/coas/22.png",
 ];
 
 export default function Quality() {
