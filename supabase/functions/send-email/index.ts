@@ -69,10 +69,7 @@ serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-
-    if (!RESEND_API_KEY) {
-      throw new Error("Missing RESEND_API_KEY");
-    }
+    if (!RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY");
 
     let toAddress: string[] = [];
     let finalSubject = "";
@@ -106,6 +103,12 @@ serve(async (req: Request) => {
         messageBody = message
           ? message.replace(/\n/g, "<br>")
           : "Please check your order details.";
+      } else if (status === "processing") {
+        // <--- NEW: PAYMENT APPROVED
+        title = "Payment Confirmed";
+        finalSubject = `Payment Confirmed: Order #${orderId.slice(0, 8)}`;
+        messageBody =
+          "Good news. We have successfully verified your payment. Your order is now being processed and prepared for dispatch. We will send you another update with your tracking information once your package ships.";
       } else if (status === "label_created") {
         title = "Shipping Label Created";
         finalSubject = `Update: Label Created for Order #${orderId.slice(0, 8)}`;
@@ -151,7 +154,6 @@ serve(async (req: Request) => {
       const itemsHtml = itemsListHtml
         ? `<div style="margin-top: 40px;"><h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; color: #1b1b1b; font-weight: bold; letter-spacing: 1px; border-bottom: 2px solid #ce2a34; padding-bottom: 4px; display: inline-block;">Order Summary</h3><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse: collapse;">${itemsListHtml}</table></div>`
         : "";
-
       const addressHtml = address
         ? `<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9;"><p style="margin: 0; font-size: 14px; color: #64748b; line-height: 1.5;"><strong style="color: #1b1b1b;">Shipping to:</strong><br/>${address.line1 || ""}<br/>${address.city || ""}, ${address.state || ""} ${address.postcode || address.postal_code || ""}</p></div>`
         : "";
@@ -178,7 +180,6 @@ serve(async (req: Request) => {
 
     const data = await res.json();
     if (!res.ok) throw new Error(JSON.stringify(data));
-
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
