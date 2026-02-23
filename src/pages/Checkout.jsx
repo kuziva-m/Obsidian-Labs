@@ -179,7 +179,22 @@ export default function Checkout() {
         console.error("Failed to send notification emails:", emailErr);
       }
 
-      // 4. Redirect
+      // 4. FIRE GOOGLE ANALYTICS PURCHASE EVENT
+      if (typeof window !== "undefined" && window.gtag) {
+        window.gtag("event", "purchase", {
+          transaction_id: orderId,
+          value: estimatedTotal,
+          currency: "AUD",
+          items: cart.map((item) => ({
+            item_name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            item_variant: getVariantLabel(item),
+          })),
+        });
+      }
+
+      // 5. Redirect to Success Page
       navigate(`/success?order_id=${orderId}`);
     } catch (err) {
       console.error("Checkout Error:", err);
