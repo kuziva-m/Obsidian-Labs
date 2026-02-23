@@ -7,12 +7,17 @@ import {
   CheckCircle,
   Truck,
   AlertTriangle,
+  Clock,
+  PackageCheck,
 } from "lucide-react";
 
 export default function OrderManager() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // NEW: Tab state for filtering
+  const [activeTab, setActiveTab] = useState("all");
 
   // Modal states
   const [trackingInput, setTrackingInput] = useState("");
@@ -45,7 +50,7 @@ export default function OrderManager() {
         .eq("id", orderId);
       if (error) throw error;
 
-      // Automatically trigger email to customer! (For both Processing AND Shipped)
+      // Automatically trigger email to customer!
       if (newStatus === "shipped" || newStatus === "processing") {
         await supabase.functions.invoke("send-email", {
           body: {
@@ -80,7 +85,7 @@ export default function OrderManager() {
       case "processing":
         return (
           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">
-            Processing
+            Paid
           </span>
         );
       case "shipped":
@@ -98,6 +103,12 @@ export default function OrderManager() {
     }
   };
 
+  // FILTER LOGIC
+  const filteredOrders = orders.filter((order) => {
+    if (activeTab === "all") return true;
+    return order.status === activeTab;
+  });
+
   if (loading)
     return (
       <div className="flex justify-center p-12">
@@ -107,13 +118,42 @@ export default function OrderManager() {
 
   return (
     <div className="bg-white rounded shadow-sm border border-gray-200">
-      <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+      <div className="p-4 md:p-6 border-b border-gray-200 flex flex-col md:flex-row md:justify-between md:items-center bg-gray-50 gap-4">
         <h2 className="font-oswald text-xl md:text-2xl uppercase text-[#1b1b1b]">
           Order Management
         </h2>
+
+        {/* TABS CONTROLS */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2 text-xs font-bold uppercase rounded transition-colors ${activeTab === "all" ? "bg-[#1b1b1b] text-white" : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-100"}`}
+          >
+            All Orders
+          </button>
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`flex items-center gap-1 px-4 py-2 text-xs font-bold uppercase rounded transition-colors ${activeTab === "pending" ? "bg-yellow-500 text-white" : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-100"}`}
+          >
+            <Clock size={14} /> Pending
+          </button>
+          <button
+            onClick={() => setActiveTab("processing")}
+            className={`flex items-center gap-1 px-4 py-2 text-xs font-bold uppercase rounded transition-colors ${activeTab === "processing" ? "bg-blue-500 text-white" : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-100"}`}
+          >
+            <CheckCircle size={14} /> Paid
+          </button>
+          <button
+            onClick={() => setActiveTab("shipped")}
+            className={`flex items-center gap-1 px-4 py-2 text-xs font-bold uppercase rounded transition-colors ${activeTab === "shipped" ? "bg-green-600 text-white" : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-100"}`}
+          >
+            <PackageCheck size={14} /> Shipped
+          </button>
+        </div>
+
         <button
           onClick={fetchOrders}
-          className="flex items-center gap-2 text-xs md:text-sm font-mono text-gray-500 hover:text-[#ce2a34]"
+          className="hidden md:flex items-center gap-2 text-xs md:text-sm font-mono text-gray-500 hover:text-[#ce2a34]"
         >
           <RefreshCw size={16} /> Refresh
         </button>
@@ -145,7 +185,7 @@ export default function OrderManager() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <tr
                 key={order.id}
                 className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -178,10 +218,10 @@ export default function OrderManager() {
                 </td>
               </tr>
             ))}
-            {orders.length === 0 && (
+            {filteredOrders.length === 0 && (
               <tr>
                 <td colSpan="6" className="p-8 text-center text-gray-500">
-                  No orders found.
+                  No {activeTab !== "all" ? activeTab : ""} orders found.
                 </td>
               </tr>
             )}
@@ -191,7 +231,7 @@ export default function OrderManager() {
 
       {/* MOBILE VIEW (Card List) */}
       <div className="md:hidden flex flex-col">
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <div
             key={order.id}
             className="p-4 border-b border-gray-100 flex flex-col gap-3"
@@ -228,8 +268,10 @@ export default function OrderManager() {
             </div>
           </div>
         ))}
-        {orders.length === 0 && (
-          <div className="p-8 text-center text-gray-500">No orders found.</div>
+        {filteredOrders.length === 0 && (
+          <div className="p-8 text-center text-gray-500">
+            No {activeTab !== "all" ? activeTab : ""} orders found.
+          </div>
         )}
       </div>
 
