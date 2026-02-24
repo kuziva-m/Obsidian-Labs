@@ -11,6 +11,51 @@ import {
   Search,
 } from "lucide-react";
 
+// --- CLIENT'S CUSTOM SORT ORDER ---
+// The algorithm checks the product name against these keywords in order.
+const PRODUCT_SORT_ORDER = [
+  "hgh",
+  "retatrutide",
+  "tirzepatide",
+  "mounjaro",
+  "cagrilintide",
+  "ghk",
+  "bpc", // This will group standard BPC and BPC+TB500 together (alphabetical fallback puts the single one first)
+  "kpv",
+  "ss-31",
+  "mots",
+  "nad",
+  "thymosin",
+  "selank",
+  "semax",
+  "cjc",
+  "tesamorelin",
+  "ipamorelin",
+  "igf",
+  "pt-141",
+  "aod",
+  "melanotan 1",
+  "melanotan 2",
+  "dsip",
+  "pinealon",
+  "epitalon",
+  "glutathione",
+  "5-amino",
+  "oxytocin",
+  "slu",
+  "hcg",
+  "bac water",
+];
+
+// Helper function to find where a product belongs in the custom list
+const getSortIndex = (productName) => {
+  const lowerName = productName.toLowerCase();
+  const index = PRODUCT_SORT_ORDER.findIndex((keyword) =>
+    lowerName.includes(keyword),
+  );
+  return index === -1 ? 999 : index; // 999 pushes unknown/new items to the very bottom
+};
+
 export default function Shop({ searchQuery }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -41,8 +86,7 @@ export default function Shop({ searchQuery }) {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select(`*, variants (*)`)
-        .order("name");
+        .select(`*, variants (*)`);
 
       if (error) throw error;
       if (data) setProducts(data);
@@ -77,16 +121,34 @@ export default function Shop({ searchQuery }) {
       return acc;
     }, {});
 
-    // 4. Sort Categories
+    // 4. Sort Categories & Products
     const sortOrder = ["Peptides", "Peptide Blends", "Accessories"];
-    const sortedGrouped = Object.entries(grouped).sort(([catA], [catB]) => {
-      const indexA = sortOrder.indexOf(catA);
-      const indexB = sortOrder.indexOf(catB);
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      return catA.localeCompare(catB);
-    });
+
+    const sortedGrouped = Object.entries(grouped)
+      .sort(([catA], [catB]) => {
+        // Sort the categories themselves (Peptides -> Blends -> Accessories)
+        const indexA = sortOrder.indexOf(catA);
+        const indexB = sortOrder.indexOf(catB);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return catA.localeCompare(catB);
+      })
+      .map(([category, items]) => {
+        // Sort the individual items INSIDE the category based on the client's list
+        items.sort((a, b) => {
+          const indexA = getSortIndex(a.name);
+          const indexB = getSortIndex(b.name);
+
+          if (indexA !== indexB) {
+            return indexA - indexB;
+          }
+          // If they match the same keyword (e.g. "BPC-157" vs "BPC-157 + TB500"), sort alphabetically
+          return a.name.localeCompare(b.name);
+        });
+
+        return [category, items];
+      });
 
     return sortedGrouped;
   }, [products, searchQuery, activeCategory]);
