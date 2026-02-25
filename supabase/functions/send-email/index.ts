@@ -83,6 +83,7 @@ serve(async (req: Request) => {
         address,
         status,
         message,
+        totalAmount, // <-- Extracted the total amount passed from Checkout
       } = payload;
       if (!email || !orderId)
         throw new Error("Missing required fields: email or orderId");
@@ -93,11 +94,42 @@ serve(async (req: Request) => {
       const shortRef = orderId.slice(0, 8).toUpperCase();
 
       if (status === "custom") {
-        title = "Update Regarding Your Order";
-        finalSubject = `Order #${shortRef} Confirmation`;
-        messageBody = message
-          ? message.replace(/\n/g, "<br>")
-          : "Please check your order details.";
+        // --- NEW: AWAITING PAYMENT BANK DETAILS ---
+        title = "Awaiting Payment";
+        finalSubject = `Action Required: Payment for Order #${shortRef}`;
+
+        const formattedTotal = totalAmount
+          ? Number(totalAmount).toFixed(2)
+          : "0.00";
+
+        const bankDetailsHtml = `
+          <div style="margin: 32px 0; padding: 24px; background-color: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 16px 0; color: #ce2a34; font-size: 16px; text-transform: uppercase;">Bank Transfer Details</h3>
+            <p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Please transfer the total amount of <strong style="color: #1b1b1b; font-size: 16px;">$${formattedTotal}</strong> to the account below to secure your order.</p>
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="font-family: monospace; font-size: 14px; color: #1b1b1b;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">Account Name</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">Obsidian Labs AU</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">BSB</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">944-100</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">Account Number</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">5508 42162</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0 0 0; color: #ce2a34; text-transform: uppercase; font-size: 12px; font-weight: bold;">Reference Number</td>
+                <td style="padding: 12px 0 0 0; text-align: right; font-weight: bold; font-size: 16px;">#${shortRef}</td>
+              </tr>
+            </table>
+          </div>
+        `;
+
+        messageBody =
+          `Thank you for choosing Obsidian Labs! Your order has been securely saved and is currently awaiting payment.<br/>` +
+          bankDetailsHtml;
       } else if (status === "processing") {
         title = "Payment Confirmed";
         finalSubject = `Payment Confirmed: Order #${shortRef}`;
