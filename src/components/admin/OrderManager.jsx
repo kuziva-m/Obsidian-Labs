@@ -12,7 +12,7 @@ import {
   Trash2,
   Edit,
   Save,
-  XCircle
+  XCircle,
 } from "lucide-react";
 
 export default function OrderManager() {
@@ -26,7 +26,7 @@ export default function OrderManager() {
   // Modal states
   const [trackingInput, setTrackingInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Edit states
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -52,7 +52,7 @@ export default function OrderManager() {
       setEditData({
         customer_name: selectedOrder.customer_name,
         customer_email: selectedOrder.customer_email,
-        shipping_address: { ...selectedOrder.shipping_address }
+        shipping_address: { ...selectedOrder.shipping_address },
       });
       setIsEditing(false); // Reset edit mode when switching orders
     }
@@ -103,20 +103,20 @@ export default function OrderManager() {
         .update({
           customer_name: editData.customer_name,
           customer_email: editData.customer_email,
-          shipping_address: editData.shipping_address
+          shipping_address: editData.shipping_address,
         })
         .eq("id", selectedOrder.id);
-      
+
       if (error) throw error;
-      
+
       // Update local state to reflect changes instantly
       setSelectedOrder({
         ...selectedOrder,
         customer_name: editData.customer_name,
         customer_email: editData.customer_email,
-        shipping_address: editData.shipping_address
+        shipping_address: editData.shipping_address,
       });
-      
+
       setIsEditing(false);
       fetchOrders(); // Refresh table data in background
     } catch (err) {
@@ -128,19 +128,23 @@ export default function OrderManager() {
 
   // NEW: Delete Order
   const handleDeleteOrder = async () => {
-    if (!window.confirm("Are you sure you want to permanently delete this order? This cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to permanently delete this order? This cannot be undone.",
+      )
+    ) {
       return;
     }
-    
+
     setIsUpdating(true);
     try {
       const { error } = await supabase
         .from("orders")
         .delete()
         .eq("id", selectedOrder.id);
-        
+
       if (error) throw error;
-      
+
       setSelectedOrder(null);
       fetchOrders();
     } catch (err) {
@@ -154,7 +158,7 @@ export default function OrderManager() {
     if (isAddress) {
       setEditData({
         ...editData,
-        shipping_address: { ...editData.shipping_address, [field]: value }
+        shipping_address: { ...editData.shipping_address, [field]: value },
       });
     } else {
       setEditData({ ...editData, [field]: value });
@@ -164,14 +168,39 @@ export default function OrderManager() {
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
-        return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">Pending</span>;
+        return (
+          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">
+            Pending
+          </span>
+        );
       case "processing":
-        return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">Paid</span>;
+        return (
+          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">
+            Paid
+          </span>
+        );
       case "shipped":
-        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">Shipped</span>;
+        return (
+          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">
+            Shipped
+          </span>
+        );
       default:
-        return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">{status}</span>;
+        return (
+          <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-[10px] sm:text-xs font-bold uppercase">
+            {status}
+          </span>
+        );
     }
+  };
+
+  // Helper to accurately extract the size label for the admin panel
+  const getVariantLabel = (item) => {
+    if (item.variants && item.variants.length > 0)
+      return item.variants[0].size_label;
+    if (item.sizeLabel) return item.sizeLabel;
+    if (item.variant && item.variant.size_label) return item.variant.size_label;
+    return "";
   };
 
   // FILTER LOGIC
@@ -235,12 +264,24 @@ export default function OrderManager() {
         <table className="w-full text-left font-body">
           <thead className="bg-white border-b border-gray-200">
             <tr>
-              <th className="p-4 font-mono text-xs text-gray-500 uppercase">Order ID</th>
-              <th className="p-4 font-mono text-xs text-gray-500 uppercase">Date</th>
-              <th className="p-4 font-mono text-xs text-gray-500 uppercase">Customer</th>
-              <th className="p-4 font-mono text-xs text-gray-500 uppercase">Total</th>
-              <th className="p-4 font-mono text-xs text-gray-500 uppercase">Status</th>
-              <th className="p-4 font-mono text-xs text-gray-500 uppercase text-center">Action</th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Order ID
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Date
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Customer
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Total
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                Status
+              </th>
+              <th className="p-4 font-mono text-xs text-gray-500 uppercase text-center">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -256,8 +297,12 @@ export default function OrderManager() {
                   {new Date(order.created_at).toLocaleDateString()}
                 </td>
                 <td className="p-4">
-                  <div className="font-bold text-[#1b1b1b] text-sm">{order.customer_name}</div>
-                  <div className="text-xs text-gray-500">{order.customer_email}</div>
+                  <div className="font-bold text-[#1b1b1b] text-sm">
+                    {order.customer_name}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {order.customer_email}
+                  </div>
                 </td>
                 <td className="p-4 font-oswald text-lg">
                   ${order.total_amount.toFixed(2)}
@@ -298,8 +343,12 @@ export default function OrderManager() {
               {getStatusBadge(order.status)}
             </div>
             <div>
-              <div className="font-bold text-[#1b1b1b] text-sm">{order.customer_name}</div>
-              <div className="text-xs text-gray-500">{order.customer_email}</div>
+              <div className="font-bold text-[#1b1b1b] text-sm">
+                {order.customer_name}
+              </div>
+              <div className="text-xs text-gray-500">
+                {order.customer_email}
+              </div>
             </div>
             <div className="flex justify-between items-end mt-2">
               <div>
@@ -350,68 +399,157 @@ export default function OrderManager() {
 
             {/* Modal Scrollable Body */}
             <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 overflow-y-auto pb-24 md:pb-8">
-              
               {/* Left Col (Customer Info & Proof) */}
               <div>
                 <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-1">
-                  <h4 className="font-oswald uppercase text-gray-400 text-sm">Customer Info</h4>
-                  {isEditing && <span className="text-xs bg-blue-100 text-blue-700 px-2 rounded font-bold uppercase">Editing</span>}
+                  <h4 className="font-oswald uppercase text-gray-400 text-sm">
+                    Customer Info
+                  </h4>
+                  {isEditing && (
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 rounded font-bold uppercase">
+                      Editing
+                    </span>
+                  )}
                 </div>
 
                 {!isEditing ? (
                   // VIEW MODE
                   <>
-                    <p className="font-bold text-[#1b1b1b]">{selectedOrder.customer_name}</p>
-                    <p className="text-gray-600 text-sm mb-6">{selectedOrder.customer_email}</p>
+                    <p className="font-bold text-[#1b1b1b]">
+                      {selectedOrder.customer_name}
+                    </p>
+                    <p className="text-gray-600 text-sm mb-6">
+                      {selectedOrder.customer_email}
+                    </p>
 
-                    <h4 className="font-oswald uppercase text-gray-400 text-sm mb-2 border-b border-gray-100 pb-1">Shipping Address</h4>
+                    <h4 className="font-oswald uppercase text-gray-400 text-sm mb-2 border-b border-gray-100 pb-1">
+                      Shipping Address
+                    </h4>
                     <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded border border-gray-200 font-mono">
-                      <p className="font-bold text-[#1b1b1b] mb-1">{selectedOrder.shipping_address?.name}</p>
+                      <p className="font-bold text-[#1b1b1b] mb-1">
+                        {selectedOrder.shipping_address?.name}
+                      </p>
                       <p>{selectedOrder.shipping_address?.line1}</p>
                       <p>
-                        {selectedOrder.shipping_address?.city}, {selectedOrder.shipping_address?.state} {selectedOrder.shipping_address?.postcode}
+                        {selectedOrder.shipping_address?.city},{" "}
+                        {selectedOrder.shipping_address?.state}{" "}
+                        {selectedOrder.shipping_address?.postcode}
                       </p>
-                      <p className="mt-2 text-gray-400">Ph: {selectedOrder.shipping_address?.phone}</p>
+                      <p className="mt-2 text-gray-400">
+                        Ph: {selectedOrder.shipping_address?.phone}
+                      </p>
                     </div>
                   </>
                 ) : (
                   // EDIT MODE
                   <div className="space-y-4 bg-blue-50/50 p-4 rounded border border-blue-100">
                     <div>
-                      <label className="text-xs text-gray-500 font-bold uppercase">Full Name</label>
-                      <input type="text" value={editData.customer_name} onChange={(e) => handleEditChange('customer_name', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+                      <label className="text-xs text-gray-500 font-bold uppercase">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.customer_name}
+                        onChange={(e) =>
+                          handleEditChange("customer_name", e.target.value)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded text-sm"
+                      />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 font-bold uppercase">Email</label>
-                      <input type="email" value={editData.customer_email} onChange={(e) => handleEditChange('customer_email', e.target.value)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+                      <label className="text-xs text-gray-500 font-bold uppercase">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={editData.customer_email}
+                        onChange={(e) =>
+                          handleEditChange("customer_email", e.target.value)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded text-sm"
+                      />
                     </div>
-                    
+
                     <div className="pt-2 mt-2 border-t border-gray-200">
-                      <label className="text-xs text-gray-500 font-bold uppercase">Address Name</label>
-                      <input type="text" value={editData.shipping_address?.name || ''} onChange={(e) => handleEditChange('name', e.target.value, true)} className="w-full p-2 border border-gray-300 rounded text-sm mb-2" />
-                      
-                      <label className="text-xs text-gray-500 font-bold uppercase">Street Address</label>
-                      <input type="text" value={editData.shipping_address?.line1 || ''} onChange={(e) => handleEditChange('line1', e.target.value, true)} className="w-full p-2 border border-gray-300 rounded text-sm mb-2" />
-                      
+                      <label className="text-xs text-gray-500 font-bold uppercase">
+                        Address Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.shipping_address?.name || ""}
+                        onChange={(e) =>
+                          handleEditChange("name", e.target.value, true)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded text-sm mb-2"
+                      />
+
+                      <label className="text-xs text-gray-500 font-bold uppercase">
+                        Street Address
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.shipping_address?.line1 || ""}
+                        onChange={(e) =>
+                          handleEditChange("line1", e.target.value, true)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded text-sm mb-2"
+                      />
+
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         <div>
-                          <label className="text-xs text-gray-500 font-bold uppercase">City</label>
-                          <input type="text" value={editData.shipping_address?.city || ''} onChange={(e) => handleEditChange('city', e.target.value, true)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+                          <label className="text-xs text-gray-500 font-bold uppercase">
+                            City
+                          </label>
+                          <input
+                            type="text"
+                            value={editData.shipping_address?.city || ""}
+                            onChange={(e) =>
+                              handleEditChange("city", e.target.value, true)
+                            }
+                            className="w-full p-2 border border-gray-300 rounded text-sm"
+                          />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 font-bold uppercase">State</label>
-                          <input type="text" value={editData.shipping_address?.state || ''} onChange={(e) => handleEditChange('state', e.target.value, true)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+                          <label className="text-xs text-gray-500 font-bold uppercase">
+                            State
+                          </label>
+                          <input
+                            type="text"
+                            value={editData.shipping_address?.state || ""}
+                            onChange={(e) =>
+                              handleEditChange("state", e.target.value, true)
+                            }
+                            className="w-full p-2 border border-gray-300 rounded text-sm"
+                          />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-xs text-gray-500 font-bold uppercase">Postcode</label>
-                          <input type="text" value={editData.shipping_address?.postcode || ''} onChange={(e) => handleEditChange('postcode', e.target.value, true)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+                          <label className="text-xs text-gray-500 font-bold uppercase">
+                            Postcode
+                          </label>
+                          <input
+                            type="text"
+                            value={editData.shipping_address?.postcode || ""}
+                            onChange={(e) =>
+                              handleEditChange("postcode", e.target.value, true)
+                            }
+                            className="w-full p-2 border border-gray-300 rounded text-sm"
+                          />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 font-bold uppercase">Phone</label>
-                          <input type="text" value={editData.shipping_address?.phone || ''} onChange={(e) => handleEditChange('phone', e.target.value, true)} className="w-full p-2 border border-gray-300 rounded text-sm" />
+                          <label className="text-xs text-gray-500 font-bold uppercase">
+                            Phone
+                          </label>
+                          <input
+                            type="text"
+                            value={editData.shipping_address?.phone || ""}
+                            onChange={(e) =>
+                              handleEditChange("phone", e.target.value, true)
+                            }
+                            className="w-full p-2 border border-gray-300 rounded text-sm"
+                          />
                         </div>
                       </div>
                     </div>
@@ -453,25 +591,32 @@ export default function OrderManager() {
                   Items Ordered
                 </h4>
                 <div className="space-y-3 mb-8 bg-gray-50 p-4 rounded border border-gray-200">
-                  {selectedOrder.items?.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between items-center text-sm border-b border-gray-200 pb-3 last:border-0 last:pb-0"
-                    >
-                      <div>
-                        <span className="font-bold text-[#1b1b1b]">{item.name}</span>
-                        <span className="text-[#ce2a34] font-bold ml-2">x{item.quantity}</span>
-                        {item.variant?.size_label && (
-                          <p className="text-xs text-gray-500 font-mono mt-1">
-                            {item.variant.size_label}
-                          </p>
-                        )}
+                  {selectedOrder.items?.map((item, i) => {
+                    const safeVariant = getVariantLabel(item);
+                    return (
+                      <div
+                        key={i}
+                        className="flex justify-between items-center text-sm border-b border-gray-200 pb-3 last:border-0 last:pb-0"
+                      >
+                        <div>
+                          <span className="font-bold text-[#1b1b1b]">
+                            {item.name}
+                          </span>
+                          <span className="text-[#ce2a34] font-bold ml-2">
+                            x{item.quantity}
+                          </span>
+                          {safeVariant && (
+                            <p className="text-xs text-gray-500 font-mono mt-1">
+                              {safeVariant}
+                            </p>
+                          )}
+                        </div>
+                        <span className="font-mono font-bold">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </span>
                       </div>
-                      <span className="font-mono font-bold">
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div className="flex justify-between items-center pt-3 mt-3 border-t border-gray-300 font-oswald uppercase text-lg">
                     <span>Total Paid</span>
                     <span className="text-[#ce2a34]">
@@ -485,14 +630,16 @@ export default function OrderManager() {
                 </h4>
                 <div className="bg-white p-4 md:p-5 rounded border border-gray-200 space-y-4 shadow-sm">
                   <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                    <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">Status:</span>
+                    <span className="text-sm font-bold text-gray-600 uppercase tracking-widest">
+                      Status:
+                    </span>
                     {getStatusBadge(selectedOrder.status)}
                   </div>
 
                   {/* EDIT MODE TOGGLES */}
                   <div className="flex gap-2">
                     {!isEditing ? (
-                      <button 
+                      <button
                         onClick={() => setIsEditing(true)}
                         className="flex-1 bg-gray-100 text-gray-700 py-2 rounded font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-colors flex justify-center items-center gap-2 border border-gray-300"
                       >
@@ -500,18 +647,24 @@ export default function OrderManager() {
                       </button>
                     ) : (
                       <>
-                        <button 
+                        <button
                           onClick={() => setIsEditing(false)}
                           className="flex-1 bg-gray-100 text-gray-600 py-2 rounded font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-colors flex justify-center items-center gap-1 border border-gray-300"
                         >
                           <XCircle size={14} /> Cancel
                         </button>
-                        <button 
+                        <button
                           onClick={handleSaveDetails}
                           disabled={isUpdating}
                           className="flex-1 bg-blue-600 text-white py-2 rounded font-bold uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors flex justify-center items-center gap-1 shadow-sm"
                         >
-                          {isUpdating ? <Loader className="animate-spin" size={14} /> : <><Save size={14} /> Save</>}
+                          {isUpdating ? (
+                            <Loader className="animate-spin" size={14} />
+                          ) : (
+                            <>
+                              <Save size={14} /> Save
+                            </>
+                          )}
                         </button>
                       </>
                     )}
@@ -520,11 +673,19 @@ export default function OrderManager() {
                   {/* APPROVE BUTTON */}
                   {selectedOrder.status === "pending" && (
                     <button
-                      onClick={() => handleUpdateStatus(selectedOrder.id, "processing")}
+                      onClick={() =>
+                        handleUpdateStatus(selectedOrder.id, "processing")
+                      }
                       disabled={isUpdating}
                       className="w-full bg-[#1b1b1b] text-white py-4 md:py-3 rounded font-oswald uppercase tracking-widest text-sm hover:bg-[#3b82f6] transition-colors flex justify-center items-center gap-2 shadow-md active:scale-[0.98]"
                     >
-                      {isUpdating ? <Loader className="animate-spin" size={18} /> : <><CheckCircle size={18} /> Approve Payment</>}
+                      {isUpdating ? (
+                        <Loader className="animate-spin" size={18} />
+                      ) : (
+                        <>
+                          <CheckCircle size={18} /> Approve Payment
+                        </>
+                      )}
                     </button>
                   )}
 
@@ -542,11 +703,19 @@ export default function OrderManager() {
                         className="w-full p-4 md:p-3 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-[#ce2a34]"
                       />
                       <button
-                        onClick={() => handleUpdateStatus(selectedOrder.id, "shipped")}
+                        onClick={() =>
+                          handleUpdateStatus(selectedOrder.id, "shipped")
+                        }
                         disabled={isUpdating || !trackingInput}
                         className="w-full bg-[#ce2a34] text-white py-4 md:py-3 rounded font-oswald uppercase tracking-widest text-sm hover:bg-green-600 transition-colors flex justify-center items-center gap-2 disabled:opacity-50 shadow-md active:scale-[0.98]"
                       >
-                        {isUpdating ? <Loader className="animate-spin" size={18} /> : <><Truck size={18} /> Mark Shipped</>}
+                        {isUpdating ? (
+                          <Loader className="animate-spin" size={18} />
+                        ) : (
+                          <>
+                            <Truck size={18} /> Mark Shipped
+                          </>
+                        )}
                       </button>
                     </div>
                   )}
@@ -554,7 +723,9 @@ export default function OrderManager() {
                   {selectedOrder.status === "shipped" && (
                     <div className="bg-green-50 text-green-700 p-4 rounded text-sm text-center border border-green-200">
                       <CheckCircle size={24} className="mx-auto mb-2" />
-                      <span className="font-bold uppercase tracking-widest block mb-1">Order Dispatched</span>
+                      <span className="font-bold uppercase tracking-widest block mb-1">
+                        Order Dispatched
+                      </span>
                       <span className="font-mono bg-white px-2 py-1 rounded border border-green-100 mt-2 inline-block break-all">
                         Trk: {selectedOrder.tracking_number || "N/A"}
                       </span>
