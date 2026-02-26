@@ -17,10 +17,10 @@ export function CartProvider({ children }) {
     localStorage.setItem("obsidian_cart", JSON.stringify(cart));
   }, [cart]);
 
-  // FIXED: Robustly identify items by variantId across all components
+  // FIXED: Robustly identify items and isolate their specific size label
   const addToCart = (product, quantity = 1) => {
     setCart((prev) => {
-      // Safely extract the variant ID whether it comes from ProductCard or ProductPage
+      // 1. Find the incoming Variant ID
       const incomingVariantId =
         product.variantId ||
         (product.variants && product.variants.length > 0
@@ -28,7 +28,7 @@ export function CartProvider({ children }) {
           : null) ||
         product.id;
 
-      // Check if this EXACT variant is already in the cart
+      // 2. Check if this EXACT variant is already in the cart
       const existingIndex = prev.findIndex((item) => {
         const currentId =
           item.variantId || (item.variants && item.variants[0]?.id) || item.id;
@@ -36,14 +36,34 @@ export function CartProvider({ children }) {
       });
 
       if (existingIndex > -1) {
-        // If it exists, increase quantity
         const updated = [...prev];
         updated[existingIndex].quantity += quantity;
         return updated;
       }
 
-      // If it doesn't exist, add as a new item and strictly attach the variantId
-      return [...prev, { ...product, variantId: incomingVariantId, quantity }];
+      // 3. ISOLATE THE SELECTED VARIANT
+      // We look through the database array to find the exact variant the user picked
+      let specificVariant = null;
+      if (product.variants) {
+        specificVariant = product.variants.find(
+          (v) => v.id === incomingVariantId,
+        );
+      }
+
+      // 4. ADD NEW ITEM
+      // We overwrite the "variants" array to ONLY contain the single size they picked.
+      // This forces the Checkout page to always display the correct label.
+      const newItem = {
+        ...product,
+        variantId: incomingVariantId,
+        quantity,
+        variants: specificVariant ? [specificVariant] : product.variants,
+        sizeLabel: specificVariant
+          ? specificVariant.size_label
+          : product.sizeLabel || "",
+      };
+
+      return [...prev, newItem];
     });
     setIsCartOpen(true);
   };
@@ -73,7 +93,6 @@ export function CartProvider({ children }) {
 
   const clearCart = () => setCart([]);
 
-  // Use the price specifically passed with the variant
   const cartTotal = cart.reduce(
     (total, item) => total + (item.price || 0) * item.quantity,
     0,
