@@ -23,15 +23,14 @@ export default function Success() {
 
   const shortRef = orderId ? orderId.slice(0, 8).toUpperCase() : "";
 
+  // 1. Clear cart and scroll to top ONCE on mount
   useEffect(() => {
-    // 1. Clear the cart on successful order
     clearCart();
-    // 2. Scroll to top
     window.scrollTo(0, 0);
-  }, [clearCart]);
+  }, []); // <--- Empty dependency array fixes the glitch!
 
+  // 2. Fetch order details to show summary
   useEffect(() => {
-    // 3. Fetch the order details from Supabase to display the summary
     async function fetchOrder() {
       if (!orderId) {
         setLoadingOrder(false);
@@ -174,7 +173,7 @@ export default function Success() {
             </p>
           </div>
 
-          {/* --- NEW: ORDER SUMMARY SECTION --- */}
+          {/* --- ORDER SUMMARY SECTION --- */}
           <div className="mb-8 border border-gray-200 rounded overflow-hidden">
             <h3 className="bg-gray-100 font-oswald text-lg uppercase text-[#1b1b1b] p-4 flex items-center gap-2 border-b border-gray-200">
               <ShoppingBag size={18} className="text-[#ce2a34]" /> Order Summary
