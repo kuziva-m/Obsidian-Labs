@@ -46,7 +46,7 @@ export default function Checkout() {
   };
 
   // --- SHIPPING CALCULATIONS (EXPRESS ONLY) ---
-  const isExpressFree = cartTotal >= 150;
+  const isExpressFree = cartTotal >= 250; // <--- UPDATED TO 250 HERE
   const shippingCost = isExpressFree ? 0 : 14.99;
   const shippingLabel = isExpressFree ? "Free" : "$14.99";
   const estimatedTotal = cartTotal + shippingCost;
