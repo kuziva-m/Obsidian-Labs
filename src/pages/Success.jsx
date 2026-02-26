@@ -9,6 +9,8 @@ import {
   Copy,
   ShoppingBag,
   Loader,
+  Upload,
+  AlertTriangle,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -21,13 +23,20 @@ export default function Success() {
   const [order, setOrder] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(true);
 
+  // Upload States
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+
   const shortRef = orderId ? orderId.slice(0, 8).toUpperCase() : "";
 
   // 1. Clear cart and scroll to top ONCE on mount
   useEffect(() => {
     clearCart();
     window.scrollTo(0, 0);
-  }, []); // <--- Empty dependency array fixes the glitch!
+  }, []);
 
   // 2. Fetch order details to show summary
   useEffect(() => {
@@ -45,6 +54,11 @@ export default function Success() {
 
         if (error) throw error;
         setOrder(data);
+
+        // If they already uploaded a receipt (e.g. they refresh the page), show the success state
+        if (data.receipt_url && data.receipt_url !== "No screenshot provided") {
+          setUploadSuccess(true);
+        }
       } catch (err) {
         console.error("Error fetching order:", err);
       } finally {
@@ -67,6 +81,62 @@ export default function Success() {
     if (item.sizeLabel) return item.sizeLabel;
     if (item.variant && item.variant.size_label) return item.variant.size_label;
     return "";
+  };
+
+  // --- UPLOAD LOGIC ---
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setReceiptFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setUploadError(null);
+      setUploadSuccess(false);
+    }
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!receiptFile || !orderId) return;
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const fileExt = receiptFile.name.split(".").pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+      // 1. Upload the Receipt Image
+      const { error: uploadError } = await supabase.storage
+        .from("payment-proofs")
+        .upload(fileName, receiptFile);
+
+      if (uploadError)
+        throw new Error(
+          "Failed to upload receipt. Please ensure it is a valid image.",
+        );
+
+      // 2. Get Public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("payment-proofs")
+        .getPublicUrl(fileName);
+
+      const receiptUrl = publicUrlData.publicUrl;
+
+      // 3. Update the Order in the Database
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update({ receipt_url: receiptUrl })
+        .eq("id", orderId);
+
+      if (updateError) throw updateError;
+
+      setUploadSuccess(true);
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploadError(
+        err.message || "Failed to upload receipt. Please try again.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -171,6 +241,84 @@ export default function Success() {
               *Please ensure you include the Reference Number so we can match
               your payment.
             </p>
+          </div>
+
+          {/* --- UPLOAD PROOF SECTION --- */}
+          <div className="mb-8 border border-gray-200 rounded overflow-hidden shadow-sm">
+            <h3 className="bg-gray-100 font-oswald text-lg uppercase text-[#1b1b1b] p-4 flex items-center gap-2 border-b border-gray-200">
+              <Upload size={18} className="text-[#ce2a34]" /> Payment Proof
+            </h3>
+
+            <div className="p-5 bg-white">
+              {uploadSuccess ? (
+                <div className="bg-green-50 text-green-700 p-4 rounded text-sm flex items-center gap-3 border border-green-200 font-bold uppercase tracking-wide">
+                  <CheckCircle size={24} /> Receipt Successfully Uploaded!
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-600 text-sm mb-4 font-body">
+                    Once you have made the transfer, upload a screenshot of your
+                    receipt here to speed up the dispatch process.
+                  </p>
+
+                  {uploadError && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4 flex items-center gap-2 border border-red-200">
+                      <AlertTriangle size={16} /> {uploadError}
+                    </div>
+                  )}
+
+                  <div
+                    className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${previewUrl ? "border-green-500 bg-green-50" : "border-gray-300 bg-gray-50 hover:bg-gray-100"}`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    {previewUrl ? (
+                      <div className="flex flex-col items-center">
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="max-h-32 rounded shadow-sm border border-green-200 mb-2"
+                        />
+                        <p className="text-xs text-gray-500 font-mono">
+                          Click to change image
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload
+                          size={28}
+                          className="text-gray-400 mx-auto mb-2"
+                        />
+                        <p className="font-oswald uppercase text-[#1b1b1b]">
+                          Select Screenshot
+                        </p>
+                        <p className="text-gray-500 text-xs mt-1">
+                          Tap or drag an image here
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {previewUrl && (
+                    <button
+                      onClick={handleUploadSubmit}
+                      disabled={isUploading}
+                      className="mt-4 w-full bg-[#1b1b1b] text-white py-3 rounded font-oswald uppercase tracking-widest text-sm hover:bg-[#ce2a34] transition-colors flex justify-center items-center gap-2 shadow-md active:scale-95"
+                    >
+                      {isUploading ? (
+                        <Loader className="animate-spin" size={16} />
+                      ) : (
+                        "Submit Receipt"
+                      )}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           {/* --- ORDER SUMMARY SECTION --- */}
