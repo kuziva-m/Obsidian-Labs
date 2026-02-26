@@ -59,6 +59,7 @@ export default function ProductPage() {
     // Create a "Cart Item" object
     const cartItem = {
       ...product,
+      price: selectedVariant.price, // <--- THIS FIXES THE NaN ERROR!
       variants: [selectedVariant], // Pass only the selected variant
       quantity: quantity,
     };
