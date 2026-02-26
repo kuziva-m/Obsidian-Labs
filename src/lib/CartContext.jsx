@@ -17,36 +17,57 @@ export function CartProvider({ children }) {
     localStorage.setItem("obsidian_cart", JSON.stringify(cart));
   }, [cart]);
 
-  // FIXED: Identify items by variantId instead of product.id
+  // FIXED: Robustly identify items by variantId across all components
   const addToCart = (product, quantity = 1) => {
     setCart((prev) => {
-      const existing = prev.find(
-        (item) => item.variantId === product.variantId,
-      );
-      if (existing) {
-        return prev.map((item) =>
-          item.variantId === product.variantId
-            ? { ...item, quantity: item.quantity + quantity }
-            : item,
-        );
+      // Safely extract the variant ID whether it comes from ProductCard or ProductPage
+      const incomingVariantId =
+        product.variantId ||
+        (product.variants && product.variants.length > 0
+          ? product.variants[0].id
+          : null) ||
+        product.id;
+
+      // Check if this EXACT variant is already in the cart
+      const existingIndex = prev.findIndex((item) => {
+        const currentId =
+          item.variantId || (item.variants && item.variants[0]?.id) || item.id;
+        return currentId === incomingVariantId;
+      });
+
+      if (existingIndex > -1) {
+        // If it exists, increase quantity
+        const updated = [...prev];
+        updated[existingIndex].quantity += quantity;
+        return updated;
       }
-      return [...prev, { ...product, quantity }];
+
+      // If it doesn't exist, add as a new item and strictly attach the variantId
+      return [...prev, { ...product, variantId: incomingVariantId, quantity }];
     });
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (variantId) => {
-    setCart((prev) => prev.filter((item) => item.variantId !== variantId));
+  const removeFromCart = (targetVariantId) => {
+    setCart((prev) =>
+      prev.filter((item) => {
+        const currentId =
+          item.variantId || (item.variants && item.variants[0]?.id) || item.id;
+        return currentId !== targetVariantId;
+      }),
+    );
   };
 
-  const updateQuantity = (variantId, newQuantity) => {
+  const updateQuantity = (targetVariantId, newQuantity) => {
     if (newQuantity < 1) return;
     setCart((prev) =>
-      prev.map((item) =>
-        item.variantId === variantId
+      prev.map((item) => {
+        const currentId =
+          item.variantId || (item.variants && item.variants[0]?.id) || item.id;
+        return currentId === targetVariantId
           ? { ...item, quantity: newQuantity }
-          : item,
-      ),
+          : item;
+      }),
     );
   };
 
