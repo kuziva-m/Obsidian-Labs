@@ -17,7 +17,8 @@ import ResearchLibrary from "./pages/ResearchLibrary";
 import ResearchDivisions from "./pages/ResearchDivisions";
 import InstagramButton from "./components/InstagramButton";
 import Terms from "./pages/Terms";
-import Quality from "./pages/Quality"; // ADDED IMPORT
+import Quality from "./pages/Quality";
+import RefundPolicy from "./pages/RefundPolicy";
 
 function App() {
   const location = useLocation();
@@ -48,8 +49,9 @@ function App() {
           <Route path="/research" element={<ResearchLibrary />} />
           <Route path="/research-divisions" element={<ResearchDivisions />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/quality" element={<Quality />} /> {/* ADDED ROUTE */}
+          <Route path="/quality" element={<Quality />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
         </Routes>
       </div>
       {!isHiddenRoute && <Footer />}
