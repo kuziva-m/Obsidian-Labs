@@ -135,7 +135,7 @@ export default function RefundPolicy() {
                   href="mailto:support@obsidianlabs-au.com"
                   className="text-[#ce2a34] hover:underline"
                 >
-                  support@obsidianlabs-au.com
+                  Obsidianlabsau@gmail.com
                 </a>
               </p>
             </section>
