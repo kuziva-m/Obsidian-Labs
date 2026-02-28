@@ -1,112 +1,107 @@
+/* --- FOOTER CONTAINER --- */
 .footer {
-  background: black;
-  border-top: 1px solid var(--line);
-  padding: 80px 0 40px;
-  color: var(--muted);
+  background-color: #1b1b1b; /* Dark theme to make white text pop */
+  padding: 60px 0 30px;
+  color: #ffffff;
+  border-top: 4px solid #ce2a34; /* Signature red line at the top */
+}
+
+.footer .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .footer__inner {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 60px;
-  gap: 40px;
+  gap: 30px;
+  margin-bottom: 40px;
 }
 
-/* TARGET THE LOGO IMAGE SPECIFICALLY */
-.footer__logo {
-  height: 180px !important; /* Forces the image to be 3x larger than standard */
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
-
-/* ADJUST BRAND CONTAINER */
-.footer .brand {
+/* --- BRANDING --- */
+.brand {
   display: flex;
   align-items: center;
-  gap: 30px; /* More breathing room for the large logo */
-  text-decoration: none;
+  gap: 15px;
 }
 
-/* PROPORTIONAL TEXT (Not oversized) */
-.footer .brand__name {
-  font-family: "Oswald", sans-serif;
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: white;
+.footer__logo {
+  height: 45px;
+  width: auto;
+}
+
+.brand__text {
+  display: flex;
+  flex-direction: column;
   line-height: 1;
-  letter-spacing: 0.05em;
 }
 
-.footer .brand__sub {
+.brand__name {
   font-family: "Oswald", sans-serif;
-  font-size: 1.2rem;
-  color: var(--red);
-  letter-spacing: 0.4em;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+}
+
+.brand__sub {
+  font-family: "Oswald", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  color: #ce2a34;
+}
+
+/* --- LINKS --- */
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
 }
 
 .footer__links a {
-  color: var(--muted);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 600; /* Added bolding for visibility */
   text-decoration: none;
-  margin: 0 15px;
-  transition: 0.2s;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s ease;
 }
 
 .footer__links a:hover {
-  color: white;
+  color: #ce2a34; /* Turns red on hover */
 }
 
-.footer__social {
-  display: flex;
-  gap: 12px;
+.dot {
+  color: #6b7280; /* Subtle grey for the separators */
+  font-size: 16px;
 }
 
-.social {
-  width: 48px;
-  height: 48px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.social:hover {
-  background: var(--red);
-  border-color: var(--red);
-  transform: translateY(-3px);
-}
-
+/* --- COPYRIGHT BOTTOM --- */
 .footer__bottom {
   text-align: center;
-  font-size: 0.8rem;
-  border-top: 1px solid var(--line);
-  padding-top: 30px;
-  font-family: var(--font-mono);
-  opacity: 0.6;
+  font-family: monospace;
+  font-size: 13px;
+  color: #d1d5db; /* Light grey/white */
+  font-weight: 600; /* Added bolding here too */
+  border-top: 1px solid #374151; /* Subtle divider line */
+  padding-top: 25px;
 }
 
-/* MOBILE OPTIMIZATION */
-@media (max-width: 900px) {
+/* --- DESKTOP LAYOUT --- */
+@media (min-width: 768px) {
   .footer__inner {
-    flex-direction: column;
-    gap: 50px;
-    text-align: center;
+    flex-direction: row;
+    justify-content: space-between;
   }
 
-  .footer .brand {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .footer__logo {
-    height: 120px !important; /* Slightly smaller for mobile screens */
+  .footer__links {
+    gap: 20px;
   }
 }
