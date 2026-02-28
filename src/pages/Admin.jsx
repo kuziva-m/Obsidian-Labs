@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import ProductManager from "../components/admin/ProductManager";
 import OrderManager from "../components/admin/OrderManager";
+import EmailManager from "../components/admin/EmailManager"; // <-- NEW IMPORT
 import {
   Package,
   ShoppingCart,
   LogOut,
   Loader2,
   ArrowRight,
+  Mail, // <-- IMPORT MAIL ICON
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -17,7 +19,7 @@ export default function Admin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [currentView, setCurrentView] = useState("orders");
+  const [currentView, setCurrentView] = useState("orders"); // 'orders' | 'products' | 'emails'
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -156,6 +158,7 @@ export default function Admin() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SEO title="Dashboard - Obsidian Labs" />
+
       {/* SIDEBAR (Desktop) */}
       <aside className="w-64 bg-[#1b1b1b] text-white flex flex-col hidden md:flex h-screen sticky top-0 border-r border-gray-800">
         <div className="p-6 border-b border-gray-800">
@@ -195,6 +198,21 @@ export default function Admin() {
             <Package size={18} />
             <span className="font-oswald uppercase tracking-wide text-sm">
               Products
+            </span>
+          </button>
+
+          {/* NEW EMAILS TAB */}
+          <button
+            onClick={() => setCurrentView("emails")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all border border-transparent ${
+              currentView === "emails"
+                ? "bg-[#ce2a34] text-white shadow-lg"
+                : "text-gray-400 hover:text-white hover:bg-white/5 hover:border-gray-700"
+            }`}
+          >
+            <Mail size={18} />
+            <span className="font-oswald uppercase tracking-wide text-sm">
+              Comms
             </span>
           </button>
         </nav>
@@ -251,9 +269,23 @@ export default function Admin() {
           >
             Products
           </button>
+          {/* NEW MOBILE EMAIL TAB */}
+          <button
+            onClick={() => setCurrentView("emails")}
+            className={`flex-1 py-3 text-xs font-bold uppercase rounded border transition-colors ${
+              currentView === "emails"
+                ? "bg-[#1b1b1b] text-white border-[#1b1b1b]"
+                : "bg-white text-gray-500 border-gray-200"
+            }`}
+          >
+            Comms
+          </button>
         </div>
 
-        {currentView === "orders" ? <OrderManager /> : <ProductManager />}
+        {/* VIEW RENDERER */}
+        {currentView === "orders" && <OrderManager />}
+        {currentView === "products" && <ProductManager />}
+        {currentView === "emails" && <EmailManager />}
       </main>
     </div>
   );
