@@ -21,7 +21,9 @@ export default function Footer() {
           <div className="footer__links">
             <Link to="/research">Research Library</Link>
             <span className="dot">•</span>
-            <Link to="/quality">Quality & COAs</Link> {/* ADDED LINK */}
+            <Link to="/quality">Quality & COAs</Link>
+            <span className="dot">•</span>
+            <Link to="/refund-policy">Refund Policy</Link>
             <span className="dot">•</span>
             <Link to="/terms">Terms of Service</Link>
             <span className="dot">•</span>

@@ -46,12 +46,14 @@ export default function Navbar() {
           <Link to="/research" className="nav-link">
             Library
           </Link>
-          {/* NEW LINK ADDED HERE */}
           <Link to="/quality" className="nav-link">
             QA & COA's
           </Link>
           <Link to="/faq" className="nav-link">
             FAQ
+          </Link>
+          <Link to="/refund-policy" className="nav-link">
+            Refund Policy
           </Link>
         </div>
 
@@ -97,12 +99,14 @@ export default function Navbar() {
           <Link to="/research" className="mobile-link" onClick={closeMenu}>
             Library
           </Link>
-          {/* NEW LINK ADDED HERE */}
           <Link to="/quality" className="mobile-link" onClick={closeMenu}>
             QA & COA's
           </Link>
           <Link to="/faq" className="mobile-link" onClick={closeMenu}>
             FAQ
+          </Link>
+          <Link to="/refund-policy" className="mobile-link" onClick={closeMenu}>
+            Refund Policy
           </Link>
         </div>
       </div>
