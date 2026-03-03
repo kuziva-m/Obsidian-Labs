@@ -154,7 +154,41 @@ export default function Success() {
         </div>
 
         {/* Instructions & Payment Details */}
-        <div className="p-8">
+        <div className="p-6 md:p-8">
+          {/* --- IMPORTANT PAYMENT NOTICE --- */}
+          <div className="bg-gray-50 border border-gray-200 border-l-4 border-l-[#ce2a34] p-5 md:p-6 rounded-r mb-8 shadow-sm">
+            <h3 className="font-oswald text-lg uppercase text-[#1b1b1b] mb-3 flex items-center gap-2">
+              <AlertTriangle className="text-[#ce2a34]" size={20} />
+              Important Payment Notice
+            </h3>
+            <div className="text-gray-600 font-body text-sm space-y-3 leading-relaxed">
+              <p>
+                Please note that when completing your bank transfer, you may
+                receive a warning stating that the account name does not match
+                the business name.
+              </p>
+              <p className="font-bold text-[#1b1b1b]">
+                This is normal and expected.
+              </p>
+              <p>
+                During the interim period while our official business banking is
+                being finalised, payments are processed through a secure
+                personal account. For brand consistency and privacy protection,
+                we display our registered business name on invoices and
+                checkout.
+              </p>
+              <p>
+                You may proceed with the transfer as normal. Once payment has
+                been completed, please upload your payment confirmation
+                screenshot below so we can promptly verify and process your
+                order.
+              </p>
+              <p className="italic text-gray-500 pt-1">
+                Thank you for your understanding and support.
+              </p>
+            </div>
+          </div>
+
           <h2 className="font-oswald text-2xl text-[#1b1b1b] uppercase text-center mb-4 flex justify-center items-center gap-2">
             <Landmark size={24} className="text-[#ce2a34]" /> Action Required:
             Payment
