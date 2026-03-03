@@ -46,7 +46,7 @@ export default function Checkout() {
   };
 
   // --- SHIPPING CALCULATIONS (EXPRESS ONLY) ---
-  const isExpressFree = cartTotal >= 250; // <--- UPDATED TO 250 HERE
+  const isExpressFree = cartTotal >= 250;
   const shippingCost = isExpressFree ? 0 : 14.99;
   const shippingLabel = isExpressFree ? "Free" : "$14.99";
   const estimatedTotal = cartTotal + shippingCost;
@@ -68,7 +68,7 @@ export default function Checkout() {
         shipping_method: "Express",
         shipping_address: formData,
         items: cart,
-        receipt_url: "No screenshot provided", // Default since upload is removed
+        receipt_url: "No screenshot provided",
         status: "pending",
       };
 
@@ -96,7 +96,7 @@ export default function Checkout() {
               "Thank you for your order! To complete your purchase, please make a bank transfer using the details provided below. We will notify you as soon as your payment is confirmed and your package is dispatched.",
             items: emailItems,
             address: formData,
-            totalAmount: estimatedTotal, // Pass total to email for bank instructions
+            totalAmount: estimatedTotal,
           },
         });
 
@@ -122,25 +122,36 @@ export default function Checkout() {
         console.error("Failed to send notification emails:", emailErr);
       }
 
-      // 3. FIRE GOOGLE ANALYTICS & ADS PURCHASE EVENTS
-      if (typeof window !== "undefined" && window.gtag) {
-        window.gtag("event", "purchase", {
-          transaction_id: orderId,
-          value: estimatedTotal,
-          currency: "AUD",
-          items: cart.map((item) => ({
-            item_name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            item_variant: getVariantLabel(item),
-          })),
-        });
+      // 3. FIRE GOOGLE ANALYTICS & META ADS PURCHASE EVENTS
+      if (typeof window !== "undefined") {
+        // Google Analytics
+        if (window.gtag) {
+          window.gtag("event", "purchase", {
+            transaction_id: orderId,
+            value: estimatedTotal,
+            currency: "AUD",
+            items: cart.map((item) => ({
+              item_name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              item_variant: getVariantLabel(item),
+            })),
+          });
 
-        window.gtag("event", "ads_conversion_Purchase_1", {
-          transaction_id: orderId,
-          value: estimatedTotal,
-          currency: "AUD",
-        });
+          window.gtag("event", "ads_conversion_Purchase_1", {
+            transaction_id: orderId,
+            value: estimatedTotal,
+            currency: "AUD",
+          });
+        }
+
+        // --- NEW: META PIXEL PURCHASE EVENT ---
+        if (window.fbq) {
+          window.fbq("track", "Purchase", {
+            value: estimatedTotal,
+            currency: "AUD",
+          });
+        }
       }
 
       // 4. Redirect to Success Page

@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react"; // <-- IMPORTED useEffect
 import AgeVerification from "./components/AgeVerification";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -22,6 +23,13 @@ import RefundPolicy from "./pages/RefundPolicy";
 
 function App() {
   const location = useLocation();
+
+  // --- META PIXEL PAGEVIEW TRACKING ---
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq("track", "PageView");
+    }
+  }, [location]);
 
   const hideLayoutRoutes = ["/admin", "/success"];
 

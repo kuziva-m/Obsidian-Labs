@@ -207,7 +207,7 @@ serve(async (req: Request) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Obsidian Labs <orders@obsidianlabs-au.com>",
+        from: "Obsidian Labs <support@obsidianlabs-au.com>",
         to: toAddress,
         subject: finalSubject,
         html: finalHtml,
