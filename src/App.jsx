@@ -20,6 +20,7 @@ import InstagramButton from "./components/InstagramButton";
 import Terms from "./pages/Terms";
 import Quality from "./pages/Quality";
 import RefundPolicy from "./pages/RefundPolicy";
+import Contact from "./pages/Contact"; // <-- NEW IMPORT
 
 function App() {
   const location = useLocation();
@@ -58,8 +59,9 @@ function App() {
           <Route path="/research-divisions" element={<ResearchDivisions />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/quality" element={<Quality />} />
-          <Route path="*" element={<NotFound />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/contact" element={<Contact />} /> {/* <-- NEW ROUTE */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
       {!isHiddenRoute && <Footer />}

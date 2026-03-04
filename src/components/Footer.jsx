@@ -23,6 +23,8 @@ export default function Footer() {
             <span className="dot">•</span>
             <Link to="/quality">Quality & COAs</Link>
             <span className="dot">•</span>
+            <Link to="/contact">Contact Us</Link>
+            <span className="dot">•</span>
             <Link to="/refund-policy">Refund Policy</Link>
             <span className="dot">•</span>
             <Link to="/terms">Terms of Service</Link>

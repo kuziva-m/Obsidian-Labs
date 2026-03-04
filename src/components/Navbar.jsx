@@ -52,6 +52,9 @@ export default function Navbar() {
           <Link to="/faq" className="nav-link">
             FAQ
           </Link>
+          <Link to="/contact" className="nav-link">
+            Contact
+          </Link>
           <Link to="/refund-policy" className="nav-link">
             Refund Policy
           </Link>
@@ -104,6 +107,9 @@ export default function Navbar() {
           </Link>
           <Link to="/faq" className="mobile-link" onClick={closeMenu}>
             FAQ
+          </Link>
+          <Link to="/contact" className="mobile-link" onClick={closeMenu}>
+            Contact
           </Link>
           <Link to="/refund-policy" className="mobile-link" onClick={closeMenu}>
             Refund Policy
