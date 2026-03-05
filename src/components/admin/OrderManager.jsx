@@ -13,7 +13,6 @@ import {
   Edit,
   Save,
   XCircle,
-  MessageSquare, // <-- Added icon for notes
 } from "lucide-react";
 
 export default function OrderManager() {
@@ -54,7 +53,6 @@ export default function OrderManager() {
         customer_name: selectedOrder.customer_name,
         customer_email: selectedOrder.customer_email,
         shipping_address: { ...selectedOrder.shipping_address },
-        notes: selectedOrder.notes || "", // <-- Added notes to edit state
       });
       setIsEditing(false); // Reset edit mode when switching orders
     }
@@ -96,7 +94,7 @@ export default function OrderManager() {
     }
   };
 
-  // Save Edited Details
+  // NEW: Save Edited Details
   const handleSaveDetails = async () => {
     setIsUpdating(true);
     try {
@@ -106,7 +104,6 @@ export default function OrderManager() {
           customer_name: editData.customer_name,
           customer_email: editData.customer_email,
           shipping_address: editData.shipping_address,
-          notes: editData.notes, // <-- Save notes to database
         })
         .eq("id", selectedOrder.id);
 
@@ -118,7 +115,6 @@ export default function OrderManager() {
         customer_name: editData.customer_name,
         customer_email: editData.customer_email,
         shipping_address: editData.shipping_address,
-        notes: editData.notes, // <-- Update local notes
       });
 
       setIsEditing(false);
@@ -130,7 +126,7 @@ export default function OrderManager() {
     }
   };
 
-  // Delete Order
+  // NEW: Delete Order
   const handleDeleteOrder = async () => {
     if (
       !window.confirm(
@@ -210,12 +206,6 @@ export default function OrderManager() {
   // FILTER LOGIC
   const filteredOrders = orders.filter((order) => {
     if (activeTab === "all") return true;
-
-    // --- NEW: Filter for orders with notes ---
-    if (activeTab === "notes") {
-      return order.notes && order.notes.trim().length > 0;
-    }
-
     return order.status === activeTab;
   });
 
@@ -259,14 +249,6 @@ export default function OrderManager() {
           >
             <PackageCheck size={14} /> Shipped
           </button>
-
-          {/* NEW: WITH NOTES TAB */}
-          <button
-            onClick={() => setActiveTab("notes")}
-            className={`flex items-center gap-1 px-4 py-2 text-xs font-bold uppercase rounded transition-colors ${activeTab === "notes" ? "bg-purple-600 text-white border-purple-600" : "bg-white text-purple-600 border border-purple-200 hover:bg-purple-50"}`}
-          >
-            <MessageSquare size={14} /> With Notes
-          </button>
         </div>
 
         <button
@@ -308,15 +290,8 @@ export default function OrderManager() {
                 key={order.id}
                 className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
               >
-                <td className="p-4 font-mono text-sm text-[#ce2a34] font-bold flex items-center gap-2">
+                <td className="p-4 font-mono text-sm text-[#ce2a34] font-bold">
                   #{order.id.slice(0, 8).toUpperCase()}
-                  {order.notes && (
-                    <MessageSquare
-                      size={14}
-                      className="text-purple-500"
-                      title="Has Notes"
-                    />
-                  )}
                 </td>
                 <td className="p-4 text-sm text-gray-600">
                   {new Date(order.created_at).toLocaleDateString()}
@@ -346,13 +321,7 @@ export default function OrderManager() {
             {filteredOrders.length === 0 && (
               <tr>
                 <td colSpan="6" className="p-8 text-center text-gray-500">
-                  No{" "}
-                  {activeTab !== "all" && activeTab !== "notes"
-                    ? activeTab
-                    : activeTab === "notes"
-                      ? "noted"
-                      : ""}{" "}
-                  orders found.
+                  No {activeTab !== "all" ? activeTab : ""} orders found.
                 </td>
               </tr>
             )}
@@ -368,11 +337,8 @@ export default function OrderManager() {
             className="p-4 border-b border-gray-100 flex flex-col gap-3"
           >
             <div className="flex justify-between items-center">
-              <span className="font-mono text-sm text-[#ce2a34] font-bold flex items-center gap-2">
+              <span className="font-mono text-sm text-[#ce2a34] font-bold">
                 #{order.id.slice(0, 8).toUpperCase()}
-                {order.notes && (
-                  <MessageSquare size={14} className="text-purple-500" />
-                )}
               </span>
               {getStatusBadge(order.status)}
             </div>
@@ -404,13 +370,7 @@ export default function OrderManager() {
         ))}
         {filteredOrders.length === 0 && (
           <div className="p-8 text-center text-gray-500">
-            No{" "}
-            {activeTab !== "all" && activeTab !== "notes"
-              ? activeTab
-              : activeTab === "notes"
-                ? "noted"
-                : ""}{" "}
-            orders found.
+            No {activeTab !== "all" ? activeTab : ""} orders found.
           </div>
         )}
       </div>
@@ -479,20 +439,6 @@ export default function OrderManager() {
                         Ph: {selectedOrder.shipping_address?.phone}
                       </p>
                     </div>
-
-                    {/* NEW: VIEW NOTES SECTION */}
-                    <h4 className="font-oswald uppercase text-gray-400 text-sm mb-2 mt-6 border-b border-gray-100 pb-1 flex items-center gap-2">
-                      <MessageSquare size={14} /> Private Notes
-                    </h4>
-                    {selectedOrder.notes ? (
-                      <div className="text-sm text-purple-900 bg-purple-50 p-4 rounded border border-purple-100 whitespace-pre-wrap">
-                        {selectedOrder.notes}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-400 italic">
-                        No notes added yet. Click "Edit Details" to add some.
-                      </div>
-                    )}
                   </>
                 ) : (
                   // EDIT MODE
@@ -607,21 +553,6 @@ export default function OrderManager() {
                         </div>
                       </div>
                     </div>
-
-                    {/* NEW: EDIT NOTES SECTION */}
-                    <div className="pt-2 mt-2 border-t border-gray-200">
-                      <label className="text-xs text-purple-600 font-bold uppercase flex items-center gap-1 mb-1">
-                        <MessageSquare size={12} /> Private Notes
-                      </label>
-                      <textarea
-                        value={editData.notes}
-                        onChange={(e) =>
-                          handleEditChange("notes", e.target.value)
-                        }
-                        placeholder="VIP details, order quirks, internal reminders..."
-                        className="w-full p-2 border border-purple-200 rounded text-sm min-h-[80px] bg-purple-50 focus:outline-none focus:border-purple-400"
-                      />
-                    </div>
                   </div>
                 )}
 
@@ -712,7 +643,7 @@ export default function OrderManager() {
                         onClick={() => setIsEditing(true)}
                         className="flex-1 bg-gray-100 text-gray-700 py-2 rounded font-bold uppercase text-xs tracking-widest hover:bg-gray-200 transition-colors flex justify-center items-center gap-2 border border-gray-300"
                       >
-                        <Edit size={14} /> Edit Details & Notes
+                        <Edit size={14} /> Edit Details
                       </button>
                     ) : (
                       <>
