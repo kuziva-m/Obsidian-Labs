@@ -10,7 +10,7 @@ import {
   Truck,
   AlertTriangle,
 } from "lucide-react";
-import "./ProductPage.css"; // Ensure you create this CSS file below
+import "./ProductPage.css";
 import SEO from "../components/SEO";
 
 export default function ProductPage() {
@@ -25,19 +25,23 @@ export default function ProductPage() {
 
   useEffect(() => {
     async function fetchProduct() {
-      // 1. Fetch Product by Slug (or ID if you use IDs in URL)
-      // Assuming 'slug' matches 'id' or you have a slug column.
-      // The '*' in select will automatically include your new 'product_page_title' column.
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          `
-          *,
-          variants (*)
-        `,
-        )
-        .eq("id", slug) // OR .eq("slug", slug) if you have one
-        .single();
+      // Smart Fetch: Check if the slug in the URL is actually a UUID (old format)
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          slug,
+        );
+
+      let query = supabase.from("products").select(`*, variants (*)`);
+
+      if (isUUID) {
+        // Fallback for old links (e.g. /product/a015e9f7-...)
+        query = query.eq("id", slug);
+      } else {
+        // Use the new SEO Slug! (e.g. /product/bpc-157-australia)
+        query = query.eq("slug", slug);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) {
         console.error("Error fetching product:", error);
@@ -59,7 +63,7 @@ export default function ProductPage() {
     // Create a "Cart Item" object
     const cartItem = {
       ...product,
-      price: selectedVariant.price, // <--- THIS FIXES THE NaN ERROR!
+      price: selectedVariant.price,
       variants: [selectedVariant], // Pass only the selected variant
       quantity: quantity,
     };

@@ -21,6 +21,7 @@ export default function ProductManager() {
 
   // Form State (For creating a NEW product)
   const [newName, setNewName] = useState("");
+  const [newSlug, setNewSlug] = useState(""); // <-- NEW SEO SLUG
   const [newCategory, setNewCategory] = useState("Peptides");
   const [newPrice, setNewPrice] = useState("");
   const [newSize, setNewSize] = useState("Standard");
@@ -99,6 +100,18 @@ export default function ProductManager() {
     });
   }
 
+  // Auto-generate slug as you type the name
+  const handleNameChange = (e) => {
+    const val = e.target.value;
+    setNewName(val);
+    setNewSlug(
+      val
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, ""),
+    );
+  };
+
   async function handleCreate() {
     if (!newName || !newPrice) return alert("Name and Price are required");
 
@@ -107,6 +120,7 @@ export default function ProductManager() {
       .from("products")
       .insert({
         name: newName,
+        slug: newSlug || newName.toLowerCase().replace(/[^a-z0-9]+/g, "-"), // Save SEO Slug
         category: newCategory,
         in_stock: newStock,
         image_url: newImage,
@@ -128,6 +142,7 @@ export default function ProductManager() {
 
     setIsAdding(false);
     setNewName("");
+    setNewSlug("");
     setNewPrice("");
     setNewSize("Standard");
     setNewImage("");
@@ -178,8 +193,23 @@ export default function ProductManager() {
               <input
                 placeholder="e.g. BPC-157"
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={handleNameChange}
                 className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
+                SEO URL Slug (Important)
+              </label>
+              <input
+                placeholder="e.g. bpc-157-peptide-australia"
+                value={newSlug}
+                onChange={(e) =>
+                  setNewSlug(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                  )
+                }
+                className="w-full p-3 border border-blue-300 rounded focus:border-[#ce2a34] outline-none bg-blue-50"
               />
             </div>
             <div>
@@ -323,6 +353,7 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
 
   // Main Product States
   const [name, setName] = useState(product.name);
+  const [slug, setSlug] = useState(product.slug || ""); // <-- NEW
   const [category, setCategory] = useState(product.category);
   const [inStock, setInStock] = useState(product.in_stock !== false);
   const [image, setImage] = useState(product.image_url);
@@ -331,9 +362,9 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
   const [localVariants, setLocalVariants] = useState([]);
   const [variantsToDelete, setVariantsToDelete] = useState([]);
 
-  // Reset local state if product changes (e.g. after refresh)
   useEffect(() => {
     setName(product.name);
+    setSlug(product.slug || "");
     setCategory(product.category);
     setInStock(product.in_stock !== false);
     setImage(product.image_url);
@@ -341,7 +372,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
     setVariantsToDelete([]);
   }, [product]);
 
-  // Variant Helpers
   const addVariant = () => {
     setLocalVariants([
       ...localVariants,
@@ -372,6 +402,10 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
         .from("products")
         .update({
           name,
+          slug: slug
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)+/g, ""), // Safe save
           category,
           in_stock: inStock,
           image_url: image,
@@ -392,10 +426,9 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
       // 3. Upsert Variants
       const newVariants = [];
       for (const v of localVariants) {
-        if (!v.size_label || isNaN(v.price)) continue; // skip invalid entries
+        if (!v.size_label || isNaN(v.price)) continue;
 
         if (v.id) {
-          // Update existing
           const { error: updErr } = await supabase
             .from("variants")
             .update({
@@ -406,7 +439,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
             .eq("id", v.id);
           if (updErr) throw updErr;
         } else {
-          // Insert new
           newVariants.push({
             product_id: product.id,
             size_label: v.size_label,
@@ -432,7 +464,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
     }
   }
 
-  // Calculate display price
   const prices = localVariants.map((v) => v.price) || [0];
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
@@ -458,8 +489,13 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
             )}
           </div>
           <div>
-            <h4 className="font-oswald text-lg text-[#1b1b1b] uppercase tracking-wide leading-none mb-2">
+            <h4 className="font-oswald text-lg text-[#1b1b1b] uppercase tracking-wide leading-none mb-2 flex items-center gap-2">
               {name}
+              {slug && (
+                <span className="text-[10px] font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded normal-case">
+                  /{slug}
+                </span>
+              )}
             </h4>
             <div className="flex flex-wrap gap-2">
               <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded uppercase">
@@ -508,7 +544,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
       {/* EDIT MENU (Expanded) */}
       {expanded && (
         <div className="bg-gray-50 p-4 md:p-6 border-t border-gray-200">
-          {/* Main Product Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 font-body text-sm">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
@@ -518,6 +553,21 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded focus:border-[#ce2a34] outline-none bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
+                SEO URL Slug
+              </label>
+              <input
+                placeholder="e.g. bpc-157-peptide-australia"
+                value={slug}
+                onChange={(e) =>
+                  setSlug(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                  )
+                }
+                className="w-full p-3 border border-blue-300 rounded focus:border-[#ce2a34] outline-none bg-blue-50"
               />
             </div>
             <div>
@@ -534,7 +584,7 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
                 <option>Accessories</option>
               </select>
             </div>
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                 Image URL
               </label>
@@ -637,11 +687,6 @@ function ProductRow({ product, onDelete, handleUpload, onRefresh }) {
                   </div>
                 </div>
               ))}
-              {localVariants.length === 0 && (
-                <p className="text-xs text-gray-500 font-mono italic">
-                  No variants added. Product will not be purchasable.
-                </p>
-              )}
             </div>
           </div>
 
