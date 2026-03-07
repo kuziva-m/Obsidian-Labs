@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   FileText,
   Microscope,
@@ -6,6 +7,8 @@ import {
   BookOpen,
   FlaskConical,
   ScrollText,
+  Home,
+  ShoppingBag,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -42,11 +45,27 @@ export default function ResearchLibrary() {
             Research <span className="text-[#ce2a34]">Library</span>
           </h1>
 
-          <p className="font-body text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="font-body text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
             Advancing scientific understanding through structured research
             information. A resource hub for laboratories, academic environments,
             and analytical researchers.
           </p>
+
+          {/* --- NEW ACTION BUTTONS --- */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/"
+              className="flex items-center justify-center gap-2 px-8 py-3 w-full sm:w-auto bg-transparent border border-gray-600 text-white font-oswald uppercase tracking-widest text-sm hover:border-white hover:bg-white hover:text-[#1b1b1b] transition-all duration-300 rounded"
+            >
+              <Home size={16} /> Home
+            </Link>
+            <Link
+              to="/products"
+              className="flex items-center justify-center gap-2 px-8 py-3 w-full sm:w-auto bg-[#ce2a34] text-white font-oswald uppercase tracking-widest text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:shadow-none transition-all duration-200 rounded"
+            >
+              <ShoppingBag size={16} /> Shop Now
+            </Link>
+          </div>
         </div>
       </div>
 
