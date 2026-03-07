@@ -61,7 +61,7 @@ export default function HeroContent() {
 
           {/* ACTION BUTTONS */}
           <div className="shipping-action-group">
-            <Link to="/shop" className="ship-btn-primary">
+            <Link to="/products" className="ship-btn-primary">
               Access Inventory
             </Link>
             <Link to="/faq" className="ship-btn-secondary">

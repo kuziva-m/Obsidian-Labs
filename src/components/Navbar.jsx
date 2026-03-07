@@ -37,7 +37,7 @@ export default function Navbar() {
           <Link to="/" className="nav-link">
             Home
           </Link>
-          <Link to="/shop" className="nav-link">
+          <Link to="/products" className="nav-link">
             Shop
           </Link>
           <Link to="/research-divisions" className="nav-link">
@@ -89,7 +89,7 @@ export default function Navbar() {
           <Link to="/" className="mobile-link" onClick={closeMenu}>
             Home
           </Link>
-          <Link to="/shop" className="mobile-link" onClick={closeMenu}>
+          <Link to="/products" className="mobile-link" onClick={closeMenu}>
             Shop
           </Link>
           <Link

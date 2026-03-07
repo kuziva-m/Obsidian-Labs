@@ -106,7 +106,7 @@ export default function ResearchDivisions() {
               </div>
               <div className="mt-8">
                 <Link
-                  to="/shop?category=Peptides"
+                  to="/products?category=Peptides"
                   className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-8 py-3 font-oswald uppercase tracking-widest hover:bg-[#ce2a34] transition-colors"
                 >
                   View Peptide Catalog <ArrowRight size={18} />
@@ -157,7 +157,7 @@ export default function ResearchDivisions() {
               </div>
               <div className="mt-8">
                 <Link
-                  to="/shop?category=Peptide Blends"
+                  to="/products?category=Peptide Blends"
                   className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-8 py-3 font-oswald uppercase tracking-widest hover:bg-[#ce2a34] transition-colors"
                 >
                   View Blends Catalog <ArrowRight size={18} />
@@ -247,7 +247,7 @@ export default function ResearchDivisions() {
               </div>
               <div className="mt-8">
                 <Link
-                  to="/shop?category=Accessories"
+                  to="/products?category=Accessories"
                   className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-8 py-3 font-oswald uppercase tracking-widest hover:bg-[#ce2a34] transition-colors"
                 >
                   View Supplies Catalog <ArrowRight size={18} />

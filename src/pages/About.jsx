@@ -178,7 +178,7 @@ export default function About() {
           <div className="container text-center">
             <h2 className="cta-title">ADVANCE YOUR RESEARCH</h2>
             <p className="cta-text">Precision matters. Choose Obsidian Labs.</p>
-            <Link to="/shop" className="cta-btn">
+            <Link to="/products" className="cta-btn">
               View Catalogue <ArrowRight size={18} />
             </Link>
           </div>

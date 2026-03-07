@@ -99,7 +99,7 @@ export default function ProductPage() {
       <div className="bg-[#1b1b1b] text-white py-6">
         <div className="container mx-auto px-4">
           <Link
-            to="/shop"
+            to="/products"
             className="text-gray-400 hover:text-white flex items-center gap-2 text-sm font-mono uppercase tracking-widest"
           >
             <ArrowLeft size={14} /> Back to Catalog

@@ -8,12 +8,12 @@ export default function Hero() {
         <img src="/assets/hero-bg.jpeg" alt="Hero" className="hero-bg-img" />
 
         {/* --- DESKTOP BUTTON (Hidden on Mobile) --- */}
-        <Link to="/shop" className="hotspot-desktop">
+        <Link to="/products" className="hotspot-desktop">
           <span className="sr-only">Shop Now</span>
         </Link>
 
         {/* --- MOBILE BUTTON (Hidden on Desktop) --- */}
-        <Link to="/shop" className="hotspot-mobile">
+        <Link to="/products" className="hotspot-mobile">
           <span className="sr-only">Shop Now</span>
         </Link>
       </div>

@@ -12,6 +12,8 @@ export default function ProductCard({ product, loading }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
 
   useEffect(() => {
+    // If there is only 1 size, select it automatically.
+    // If there are MULTIPLE sizes, leave it null to FORCE the user to select one!
     if (sortedVariants.length === 1) {
       setSelectedVariant(sortedVariants[0]);
     } else if (sortedVariants.length > 1) {
@@ -60,6 +62,7 @@ export default function ProductCard({ product, loading }) {
     return "Unavailable";
   };
 
+  // Dynamic Button Text
   let buttonText = "Add To Cart";
   if (!isProductActive) buttonText = "Currently Unavailable";
   else if (sortedVariants.length > 1 && !selectedVariant)
@@ -93,6 +96,7 @@ export default function ProductCard({ product, loading }) {
         to={`/product/${product.slug || product.id}`}
         className="relative block h-56 bg-gray-50 rounded-t overflow-hidden group"
       >
+        {/* STOCK BADGE */}
         {!isProductActive && (
           <div className="absolute top-3 right-3 bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded z-10 border border-red-200">
             Out of Stock
@@ -136,12 +140,14 @@ export default function ProductCard({ product, loading }) {
         )}
 
         <div className="mt-auto pt-4 border-t border-gray-100">
+          {/* Price Display */}
           <div className="mb-3">
             <span className="font-oswald text-2xl text-[#1b1b1b]">
               {getPriceDisplay()}
             </span>
           </div>
 
+          {/* VARIANT BUTTONS (PILLS) */}
           {sortedVariants.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {sortedVariants.map((v) => {
@@ -169,6 +175,7 @@ export default function ProductCard({ product, loading }) {
             </div>
           )}
 
+          {/* Single Custom Variant Label (if only 1 exists and it's not named 'Standard') */}
           {sortedVariants.length === 1 &&
             sortedVariants[0].size_label !== "Standard" && (
               <div className="mb-4">
@@ -178,6 +185,7 @@ export default function ProductCard({ product, loading }) {
               </div>
             )}
 
+          {/* ADD TO CART BUTTON */}
           <button
             disabled={!canBuy}
             onClick={handleAddToCart}

@@ -53,7 +53,7 @@ export default function Success() {
           </div>
 
           <Link
-            to="/shop"
+            to="/products"
             className="w-full bg-[#1b1b1b] text-white py-4 rounded font-oswald uppercase tracking-widest flex justify-center items-center gap-2 hover:bg-[#ce2a34] transition-colors shadow-md"
           >
             Continue Shopping <ArrowRight size={18} />

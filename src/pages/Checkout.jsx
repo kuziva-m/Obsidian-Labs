@@ -43,7 +43,7 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!cart || cart.length === 0) {
-      navigate("/shop");
+      navigate("/products");
     }
   }, [cart, navigate]);
 
@@ -222,7 +222,7 @@ export default function Checkout() {
       <SEO title="Secure Checkout - Obsidian Labs" />
       <div className="container mx-auto px-4 max-w-6xl">
         <button
-          onClick={() => navigate("/shop")}
+          onClick={() => navigate("/products")}
           className="flex items-center gap-2 text-gray-500 hover:text-[#ce2a34] font-mono text-sm uppercase mb-8 transition-colors"
         >
           <ArrowLeft size={16} /> Back to Shop

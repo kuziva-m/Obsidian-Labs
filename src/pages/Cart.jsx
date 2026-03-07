@@ -50,7 +50,7 @@ export default function Cart() {
           Looks like you haven't added anything yet.
         </p>
         <Link
-          to="/shop"
+          to="/products"
           className="bg-[#ce2a34] text-white py-3 px-8 rounded font-[Oswald] uppercase tracking-widest hover:bg-[#1b1b1b] transition-colors"
         >
           Return to Shop

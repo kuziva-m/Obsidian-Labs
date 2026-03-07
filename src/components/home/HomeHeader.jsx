@@ -22,7 +22,7 @@ export default function HomeHeader() {
           <Link className="nav__link" to="/about">
             About Us
           </Link>
-          <Link className="nav__link" to="/shop">
+          <Link className="nav__link" to="/products">
             Services
           </Link>
           <Link className="nav__link" to="/contact">

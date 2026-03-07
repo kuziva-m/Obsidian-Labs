@@ -57,7 +57,7 @@ export default function Services() {
 
           <div className="flex justify-center mt-10">
             <Link
-              to="/shop"
+              to="/products"
               className="px-8 py-3 bg-[var(--baltic-sea)] text-white font-oswald uppercase tracking-widest hover:bg-[var(--brick-red)] transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] rounded-md"
             >
               View Full Catalog

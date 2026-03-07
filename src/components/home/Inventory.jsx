@@ -27,7 +27,7 @@ export default function Inventory() {
             </p>
           </div>
           <Link
-            to="/shop"
+            to="/products"
             className="hidden md:block font-oswald uppercase text-[var(--brick-red)] border-b-2 border-[var(--brick-red)] hover:text-black hover:border-black transition-all"
           >
             View All Stock
@@ -38,7 +38,7 @@ export default function Inventory() {
           {products.map((product) => (
             <Link
               key={product.id}
-              to={`/shop`}
+              to={`/products`}
               className="group block bg-white border-2 border-transparent hover:border-[var(--baltic-sea)] p-4 transition-all"
             >
               <div className="aspect-square bg-gray-100 mb-4 relative overflow-hidden">
@@ -74,7 +74,7 @@ export default function Inventory() {
 
         <div className="mt-8 text-center md:hidden">
           <Link
-            to="/shop"
+            to="/products"
             className="font-oswald uppercase bg-[var(--baltic-sea)] text-white px-6 py-3 text-sm tracking-widest"
           >
             View All Stock
