@@ -6,7 +6,7 @@
   </url>
   
   <url>
-    <loc>https://www.obsidianlabs-au.com/shop</loc>
+    <loc>https://www.obsidianlabs-au.com/products</loc>
     <priority>0.9</priority>
   </url>
   
@@ -22,7 +22,135 @@
     <loc>https://www.obsidianlabs-au.com/quality</loc>
     <priority>0.8</priority>
   </url>
-  
+
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/cjc-with-dac-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/bac-water-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/igf-1-lr3-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/bpc-157-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/ss-31-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/tirzepatide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/melanotan-1-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/kpv-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/glutathione-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/slu-pp-322-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/epitalon-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/dsip-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/5-amino-1mq-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/pinealon-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/tesamorelin-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/mots-c-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/nad-plus-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/bpc-157-tb500-blend-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/retatrutide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/thymosin-alpha-1-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/cjc-1295-no-dac-ipamorelin-blend-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/hgh-kit-blue-tops-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/oxytocin-acetate-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/semax-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/ghk-cu-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/hcg-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/selank-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/pt-141-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/melanotan-2-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/cagrilintide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/ipamorelin-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.obsidianlabs-au.com/product/aod-9604-peptide-australia</loc>
+    <priority>0.8</priority>
+  </url>
   <url>
     <loc>https://www.obsidianlabs-au.com/about</loc>
     <priority>0.7</priority>
@@ -44,4 +172,4 @@
     <loc>https://www.obsidianlabs-au.com/terms</loc>
     <priority>0.5</priority>
   </url>
-</urlset> 
+</urlset>
