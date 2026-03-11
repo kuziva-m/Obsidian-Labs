@@ -206,8 +206,7 @@ export default function Checkout() {
         }
       }
 
-      // 5. Redirect to Success Page
-      navigate(`/success?order_id=${orderId}`);
+      navigate("/success", { state: { orderId: orderId } });
     } catch (err) {
       console.error("Checkout Error:", err);
       setError(err.message || "Failed to submit order. Please try again.");
