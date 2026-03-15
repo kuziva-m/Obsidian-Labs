@@ -13,11 +13,16 @@ import {
   Reply,
   Calendar,
   User,
+  History,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 
 export default function EmailManager() {
   const [activeTab, setActiveTab] = useState("compose");
   const [inboxMessages, setInboxMessages] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -28,9 +33,10 @@ export default function EmailManager() {
     message: "",
   });
 
-  // --- FETCH INBOX ---
+  // --- DATA FETCHING ---
   useEffect(() => {
     if (activeTab === "inbox") fetchInbox();
+    if (activeTab === "sent") fetchSentEmails();
 
     const subscription = supabase
       .channel("inbox_realtime")
@@ -52,6 +58,23 @@ export default function EmailManager() {
       .order("created_at", { ascending: false });
     if (data) setInboxMessages(data);
     setLoading(false);
+  };
+
+  const fetchSentEmails = async () => {
+    setLoading(true);
+    try {
+      const { data, error } =
+        await supabase.functions.invoke("list-sent-emails");
+      if (error) throw error;
+      // Resend API returns the list inside a 'data' array
+      if (data && data.data) {
+        setSentMessages(data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching sent emails:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -76,7 +99,7 @@ export default function EmailManager() {
     const originalBody = msg.body_text || "No text content.";
 
     setFormData({
-      to: msg.sender.replace(/.*<([^>]+)>/, "$1"), // Extract just the email if formatted like "Name <email>"
+      to: msg.sender.replace(/.*<([^>]+)>/, "$1"), // Extract just the email
       subject: msg.subject?.startsWith("Re:")
         ? msg.subject
         : `Re: ${msg.subject || "No Subject"}`,
@@ -91,14 +114,13 @@ export default function EmailManager() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Convert newlines to HTML breaks so it renders properly in our Edge Function template
       const formattedMessage = formData.message.replace(/\n/g, "<br>");
 
       const { error } = await supabase.functions.invoke("send-email", {
         body: {
           to: formData.to,
           subject: formData.subject,
-          html: formattedMessage, // This triggers the custom HTML block in your send-email edge function
+          html: formattedMessage,
         },
       });
 
@@ -111,6 +133,31 @@ export default function EmailManager() {
       setStatus("error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper for status colors
+  const getStatusBadge = (statusStr) => {
+    switch (statusStr?.toLowerCase()) {
+      case "delivered":
+        return (
+          <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded text-[10px] font-bold uppercase">
+            <CheckCircle2 size={12} /> Delivered
+          </span>
+        );
+      case "bounced":
+      case "complained":
+        return (
+          <span className="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded text-[10px] font-bold uppercase">
+            <XCircle size={12} /> Bounced
+          </span>
+        );
+      default:
+        return (
+          <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded text-[10px] font-bold uppercase">
+            <Clock size={12} /> {statusStr}
+          </span>
+        );
     }
   };
 
@@ -131,7 +178,10 @@ export default function EmailManager() {
             <Send size={16} /> Compose
           </button>
           <button
-            onClick={() => setActiveTab("inbox")}
+            onClick={() => {
+              setActiveTab("inbox");
+              setSelectedMessage(null);
+            }}
             className={`flex-1 p-4 font-oswald uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-colors ${
               activeTab === "inbox"
                 ? "bg-white text-[#ce2a34] border-t-2 border-[#ce2a34]"
@@ -139,6 +189,16 @@ export default function EmailManager() {
             }`}
           >
             <Inbox size={16} /> Inbox
+          </button>
+          <button
+            onClick={() => setActiveTab("sent")}
+            className={`flex-1 p-4 font-oswald uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-colors ${
+              activeTab === "sent"
+                ? "bg-white text-[#ce2a34] border-t-2 border-[#ce2a34]"
+                : "text-gray-500 hover:bg-gray-100"
+            }`}
+          >
+            <History size={16} /> Sent
           </button>
         </div>
 
@@ -365,6 +425,67 @@ export default function EmailManager() {
             )}
           </div>
         )}
+
+        {/* --- SENT TAB --- */}
+        {activeTab === "sent" && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
+                <h3 className="font-oswald uppercase tracking-widest text-[#1b1b1b] flex items-center gap-2">
+                  <History size={18} className="text-[#ce2a34]" /> Sent Log
+                </h3>
+                <button
+                  onClick={fetchSentEmails}
+                  className="p-2 text-gray-400 hover:text-[#ce2a34] transition-all"
+                  title="Refresh"
+                >
+                  <RefreshCw size={16} />
+                </button>
+              </div>
+
+              {!loading && sentMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                  <History size={48} className="mb-4 opacity-20" />
+                  <p className="font-mono text-sm uppercase">
+                    No sent history found.
+                  </p>
+                </div>
+              )}
+
+              {loading && (
+                <div className="flex justify-center p-12 text-[#ce2a34]">
+                  <Loader2 className="animate-spin" size={32} />
+                </div>
+              )}
+
+              <div className="divide-y divide-gray-100">
+                {sentMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="p-5 hover:bg-gray-50 transition-colors flex gap-4 items-center"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline mb-2">
+                        <span className="font-bold text-[#1b1b1b] truncate pr-2 text-sm flex items-center gap-2">
+                          To: {msg.to[0]}
+                        </span>
+                        <span className="text-xs font-mono text-gray-400 flex-shrink-0">
+                          {new Date(msg.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm text-gray-600 truncate mr-4">
+                          {msg.subject || "(No Subject)"}
+                        </h4>
+                        {getStatusBadge(msg.status)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SIDEBAR INFO */}
@@ -374,9 +495,9 @@ export default function EmailManager() {
           <h4 className="font-oswald text-xl uppercase tracking-widest mb-3 border-b border-gray-700 pb-2">
             Communications
           </h4>
-          <p className="text-sm text-gray-300 leading-relaxed font-body">
+          <p className="text-sm text-gray-300 leading-relaxed font-body mb-4">
             <strong className="text-white">Outgoing:</strong> Processed via
-            Resend API.
+            Resend API. Check the Sent tab for delivery status.
             <br />
             <br />
             <strong className="text-white">Incoming:</strong> Emails sent to

@@ -82,9 +82,9 @@ serve(async (req: Request) => {
         items,
         address,
         status,
-        message,
-        totalAmount, // <-- Extracted the total amount passed from Checkout
+        totalAmount,
       } = payload;
+
       if (!email || !orderId)
         throw new Error("Missing required fields: email or orderId");
 
@@ -94,59 +94,56 @@ serve(async (req: Request) => {
       const shortRef = orderId.slice(0, 8).toUpperCase();
 
       if (status === "custom") {
-        // --- NEW: AWAITING PAYMENT BANK DETAILS ---
-        title = "Awaiting Payment";
-        finalSubject = `Action Required: Payment for Order #${shortRef}`;
+        // --- UPDATED: ORDER CONFIRMED (Screenshot Received) ---
+        title = "Order Confirmed";
+        finalSubject = `Order Confirmation - #${shortRef}`;
 
         const formattedTotal = totalAmount
           ? Number(totalAmount).toFixed(2)
           : "0.00";
 
-        const bankDetailsHtml = `
+        const summaryBoxHtml = `
           <div style="margin: 32px 0; padding: 24px; background-color: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0;">
-            <h3 style="margin: 0 0 16px 0; color: #ce2a34; font-size: 16px; text-transform: uppercase;">Bank Transfer Details</h3>
-            <p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Please transfer the total amount of <strong style="color: #1b1b1b; font-size: 16px;">$${formattedTotal}</strong> to the account below to secure your order.</p>
+            <h3 style="margin: 0 0 16px 0; color: #ce2a34; font-size: 16px; text-transform: uppercase;">Payment Details</h3>
+            <p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">We have received your payment confirmation for the total of <strong style="color: #1b1b1b; font-size: 16px;">$${formattedTotal}</strong>.</p>
             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="font-family: monospace; font-size: 14px; color: #1b1b1b;">
               <tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">Account Name</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">Obsidian Labs AU</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">Order Reference</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">#${shortRef}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">BSB</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">944-100</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">Payment Method</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">Bank Transfer</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; text-transform: uppercase; font-size: 12px;">Account Number</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">5508 42162</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0 0 0; color: #ce2a34; text-transform: uppercase; font-size: 12px; font-weight: bold;">Reference Number</td>
-                <td style="padding: 12px 0 0 0; text-align: right; font-weight: bold; font-size: 16px;">#${shortRef}</td>
+                <td style="padding: 8px 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Status</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #16a34a;">Awaiting Verification</td>
               </tr>
             </table>
           </div>
         `;
 
         messageBody =
-          `Thank you for choosing Obsidian Labs! Your order has been securely saved and is currently awaiting payment.<br/>` +
-          bankDetailsHtml;
+          `Thank you for your order! We have successfully received your payment confirmation screenshot. <br/><br/>` +
+          `Our team is currently verifying the transfer. Once your payment has cleared, your order will be processed and you will be provided with an Australia Post tracking number via email.` +
+          summaryBoxHtml;
       } else if (status === "processing") {
-        title = "Payment Confirmed";
-        finalSubject = `Payment Confirmed: Order #${shortRef}`;
+        title = "Payment Verified";
+        finalSubject = `Payment Verified: Order #${shortRef}`;
         messageBody =
-          "Your payment has been verified and your order is getting ready to ship. We will send you another update with your tracking information once your package ships.";
+          "Your payment has been successfully verified and your order is now being prepared for dispatch. We will send you another update with your tracking information shortly.";
       } else if (status === "label_created") {
         title = "Shipping Label Created";
         finalSubject = `Update: Label Created for Order #${shortRef}`;
         messageBody =
-          "Your shipping label has been created. Your package is being prepared and will be dispatched the next business day.";
+          "Your shipping label has been created. Your package is being prepared and will be dispatched from our Melbourne facility the next business day.";
       } else if (status === "shipped") {
-        title = "Your Order Is On The Way";
+        title = "Order Dispatched";
         finalSubject = `Shipping Update: Order #${shortRef}`;
         messageBody =
-          "Great news. Your order has been packed and dispatched from our Melbourne facility.";
+          "Great news! Your order has been packed and dispatched via Australia Post Express.";
       } else if (status === "delivered") {
-        title = "Your Order Has Been Delivered";
+        title = "Order Delivered";
         finalSubject = `Delivered: Order #${shortRef}`;
         messageBody =
           "Your package has been delivered. We hope you are satisfied with your research compounds.";
@@ -167,7 +164,6 @@ serve(async (req: Request) => {
             </div>`
           : "";
 
-      // Helper function to safely extract the variant from different payload structures
       const getVariantInfo = (item: any) => {
         if (item.size) return item.size;
         if (item.variant && item.variant.size_label)
@@ -187,7 +183,7 @@ serve(async (req: Request) => {
         .join("");
 
       const itemsHtml = itemsListHtml
-        ? `<div style="margin-top: 40px;"><h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; color: #1b1b1b; font-weight: bold; letter-spacing: 1px; border-bottom: 2px solid #ce2a34; padding-bottom: 4px; display: inline-block;">Order Summary (#${shortRef})</h3><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse: collapse;">${itemsListHtml}</table></div>`
+        ? `<div style="margin-top: 40px;"><h3 style="margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; color: #1b1b1b; font-weight: bold; letter-spacing: 1px; border-bottom: 2px solid #ce2a34; padding-bottom: 4px; display: inline-block;">Order Summary</h3><table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse: collapse;">${itemsListHtml}</table></div>`
         : "";
 
       const addressHtml = address
