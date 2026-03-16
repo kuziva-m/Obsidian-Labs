@@ -9,10 +9,10 @@ import {
   Layers,
   BriefcaseMedical,
   Search,
+  X,
 } from "lucide-react";
 
 // --- CLIENT'S CUSTOM SORT ORDER ---
-// The algorithm checks the product name against these keywords in order.
 const PRODUCT_SORT_ORDER = [
   "hgh",
   "retatrutide",
@@ -20,7 +20,7 @@ const PRODUCT_SORT_ORDER = [
   "mounjaro",
   "cagrilintide",
   "ghk",
-  "bpc", // This will group standard BPC and BPC+TB500 together (alphabetical fallback puts the single one first)
+  "bpc",
   "kpv",
   "ss-31",
   "mots",
@@ -47,21 +47,20 @@ const PRODUCT_SORT_ORDER = [
   "bac water",
 ];
 
-// Helper function to find where a product belongs in the custom list
 const getSortIndex = (productName) => {
   const lowerName = productName.toLowerCase();
   const index = PRODUCT_SORT_ORDER.findIndex((keyword) =>
     lowerName.includes(keyword),
   );
-  return index === -1 ? 999 : index; // 999 pushes unknown/new items to the very bottom
+  return index === -1 ? 999 : index;
 };
 
-export default function Shop({ searchQuery }) {
+export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Initialize category from URL or default to "All"
   const [activeCategory, setActiveCategory] = useState(
     searchParams.get("category") || "All",
   );
@@ -101,8 +100,8 @@ export default function Shop({ searchQuery }) {
     let result = products;
 
     // 1. Filter by Search
-    if (searchQuery && searchQuery.trim() !== "") {
-      const lowerQuery = searchQuery.toLowerCase();
+    if (searchTerm && searchTerm.trim() !== "") {
+      const lowerQuery = searchTerm.toLowerCase();
       result = result.filter((product) =>
         product.name.toLowerCase().includes(lowerQuery),
       );
@@ -126,7 +125,6 @@ export default function Shop({ searchQuery }) {
 
     const sortedGrouped = Object.entries(grouped)
       .sort(([catA], [catB]) => {
-        // Sort the categories themselves (Peptides -> Blends -> Accessories)
         const indexA = sortOrder.indexOf(catA);
         const indexB = sortOrder.indexOf(catB);
         if (indexA !== -1 && indexB !== -1) return indexA - indexB;
@@ -135,7 +133,6 @@ export default function Shop({ searchQuery }) {
         return catA.localeCompare(catB);
       })
       .map(([category, items]) => {
-        // Sort the individual items INSIDE the category based on the client's list
         items.sort((a, b) => {
           const indexA = getSortIndex(a.name);
           const indexB = getSortIndex(b.name);
@@ -143,7 +140,6 @@ export default function Shop({ searchQuery }) {
           if (indexA !== indexB) {
             return indexA - indexB;
           }
-          // If they match the same keyword (e.g. "BPC-157" vs "BPC-157 + TB500"), sort alphabetically
           return a.name.localeCompare(b.name);
         });
 
@@ -151,7 +147,7 @@ export default function Shop({ searchQuery }) {
       });
 
     return sortedGrouped;
-  }, [products, searchQuery, activeCategory]);
+  }, [products, searchTerm, activeCategory]);
 
   return (
     <div className="bg-[#f4f4f5] min-h-screen py-12">
@@ -166,10 +162,41 @@ export default function Shop({ searchQuery }) {
           <h1 className="font-oswald text-4xl md:text-5xl uppercase text-[#1b1b1b] mb-4 tracking-wide">
             Laboratory <span className="text-[#ce2a34]">Inventory</span>
           </h1>
-          <p className="font-body text-gray-500 max-w-2xl mx-auto">
+          <p className="font-body text-gray-500 max-w-2xl mx-auto mb-10">
             High-purity synthetic compounds intended strictly for in-vitro
             cellular research and analytical use. Not for human consumption.
           </p>
+
+          {/* --- BRANDED SEARCH BAR --- */}
+          <div className="relative w-full max-w-2xl mx-auto group z-10 mb-10">
+            {/* Decorative Top Accent Line */}
+            <div className="absolute -top-[2px] left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-[#ce2a34] to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 z-20"></div>
+
+            <div className="relative flex items-center w-full bg-white border-2 border-gray-200 focus-within:border-[#1b1b1b] focus-within:shadow-[6px_6px_0px_0px_#ce2a34] focus-within:-translate-y-[2px] transition-all duration-300 rounded-sm overflow-hidden">
+              <div className="pl-5 pr-2 text-gray-400 group-focus-within:text-[#ce2a34] transition-colors">
+                <Search size={20} strokeWidth={2.5} />
+              </div>
+
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="SEARCH COMPOUNDS, PEPTIDES, OR BLENDS..."
+                className="w-full py-4 pl-2 pr-12 font-oswald tracking-wide text-sm md:text-base text-[#1b1b1b] bg-transparent outline-none placeholder:text-gray-400 placeholder:font-oswald uppercase"
+              />
+
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-4 p-1.5 text-gray-400 hover:text-white hover:bg-[#ce2a34] rounded-sm transition-all bg-white shadow-sm border border-gray-100"
+                  aria-label="Clear search"
+                >
+                  <X size={16} strokeWidth={3} />
+                </button>
+              )}
+            </div>
+          </div>
+          {/* --------------------------- */}
         </div>
 
         {/* CATEGORY TABS */}
@@ -238,7 +265,6 @@ export default function Shop({ searchQuery }) {
       </div>
 
       <style>{`
-        /* Hide scrollbar for category tabs on mobile while keeping functionality */
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
