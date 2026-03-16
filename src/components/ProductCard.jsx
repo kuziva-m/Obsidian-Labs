@@ -112,7 +112,8 @@ export default function ProductCard({ product, loading }) {
           src={displayImage}
           alt={`${product.name}`}
           loading="lazy"
-          className={`w-full h-full object-contain p-4 transition-transform duration-500 ${isProductActive ? "group-hover:scale-110" : "grayscale opacity-60"}`}
+          /* --- FIX APPLIED HERE: object-cover, object-center, removed p-4 --- */
+          className={`w-full h-full object-cover object-center transition-transform duration-500 ${isProductActive ? "group-hover:scale-110" : "grayscale opacity-60"}`}
         />
       </Link>
 
