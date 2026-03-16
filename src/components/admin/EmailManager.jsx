@@ -25,7 +25,14 @@ export default function EmailManager() {
   const [sentMessages, setSentMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
+
+  // Inbox Detail State
   const [selectedMessage, setSelectedMessage] = useState(null);
+
+  // Sent Detail State
+  const [selectedSentMessage, setSelectedSentMessage] = useState(null);
+  const [sentMessageHtml, setSentMessageHtml] = useState("");
+  const [loadingSentDetails, setLoadingSentDetails] = useState(false);
 
   const [formData, setFormData] = useState({
     to: "",
@@ -63,10 +70,10 @@ export default function EmailManager() {
   const fetchSentEmails = async () => {
     setLoading(true);
     try {
+      // Calls the edge function WITHOUT an ID to get the list
       const { data, error } =
         await supabase.functions.invoke("list-sent-emails");
       if (error) throw error;
-      // Resend API returns the list inside a 'data' array
       if (data && data.data) {
         setSentMessages(data.data);
       }
@@ -74,6 +81,40 @@ export default function EmailManager() {
       console.error("Error fetching sent emails:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- VIEW FULL SENT EMAIL ---
+  const handleViewSentEmail = async (msg) => {
+    setSelectedSentMessage(msg);
+    setSentMessageHtml("");
+    setLoadingSentDetails(true);
+
+    try {
+      // Calls the SAME edge function WITH an ID to get the HTML body
+      const { data, error } = await supabase.functions.invoke(
+        "list-sent-emails",
+        {
+          body: { id: msg.id },
+        },
+      );
+
+      if (error) throw error;
+
+      if (data && data.html) {
+        setSentMessageHtml(data.html);
+      } else if (data && data.text) {
+        setSentMessageHtml(
+          `<p style="white-space: pre-wrap;">${data.text}</p>`,
+        );
+      } else {
+        setSentMessageHtml("<p>No content available.</p>");
+      }
+    } catch (err) {
+      console.error("Error loading email content:", err);
+      setSentMessageHtml("<p>Error loading email content.</p>");
+    } finally {
+      setLoadingSentDetails(false);
     }
   };
 
@@ -99,7 +140,7 @@ export default function EmailManager() {
     const originalBody = msg.body_text || "No text content.";
 
     setFormData({
-      to: msg.sender.replace(/.*<([^>]+)>/, "$1"), // Extract just the email
+      to: msg.sender.replace(/.*<([^>]+)>/, "$1"),
       subject: msg.subject?.startsWith("Re:")
         ? msg.subject
         : `Re: ${msg.subject || "No Subject"}`,
@@ -115,7 +156,6 @@ export default function EmailManager() {
     setLoading(true);
     try {
       const formattedMessage = formData.message.replace(/\n/g, "<br>");
-
       const { error } = await supabase.functions.invoke("send-email", {
         body: {
           to: formData.to,
@@ -191,7 +231,10 @@ export default function EmailManager() {
             <Inbox size={16} /> Inbox
           </button>
           <button
-            onClick={() => setActiveTab("sent")}
+            onClick={() => {
+              setActiveTab("sent");
+              setSelectedSentMessage(null);
+            }}
             className={`flex-1 p-4 font-oswald uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-colors ${
               activeTab === "sent"
                 ? "bg-white text-[#ce2a34] border-t-2 border-[#ce2a34]"
@@ -270,7 +313,7 @@ export default function EmailManager() {
                   <Loader2 className="animate-spin" size={18} />
                 ) : (
                   <Send size={18} />
-                )}
+                )}{" "}
                 Send Dispatch
               </button>
             </div>
@@ -281,7 +324,6 @@ export default function EmailManager() {
         {activeTab === "inbox" && (
           <div className="flex-1 flex flex-col overflow-hidden">
             {selectedMessage ? (
-              // --- DETAIL VIEW ---
               <div className="flex-1 flex flex-col p-6 overflow-y-auto">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                   <button
@@ -298,12 +340,10 @@ export default function EmailManager() {
                     <Trash2 size={20} />
                   </button>
                 </div>
-
                 <div className="bg-gray-50 rounded p-6 mb-6 border border-gray-200">
                   <h2 className="text-xl font-oswald uppercase text-[#1b1b1b] mb-4">
                     {selectedMessage.subject}
                   </h2>
-
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-body text-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded bg-[#1b1b1b] text-white flex items-center justify-center font-bold">
@@ -319,12 +359,11 @@ export default function EmailManager() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-gray-500 bg-white px-3 py-1.5 rounded border border-gray-200 font-mono text-xs">
-                      <Calendar size={14} />
+                      <Calendar size={14} />{" "}
                       {new Date(selectedMessage.created_at).toLocaleString()}
                     </div>
                   </div>
                 </div>
-
                 <div className="flex-1 bg-white rounded border border-gray-200 p-6 shadow-inner mb-6 min-h-[200px]">
                   {selectedMessage.body_html ? (
                     <div
@@ -340,7 +379,6 @@ export default function EmailManager() {
                     </div>
                   )}
                 </div>
-
                 <div className="flex justify-end">
                   <button
                     onClick={() => handleReply(selectedMessage)}
@@ -351,7 +389,6 @@ export default function EmailManager() {
                 </div>
               </div>
             ) : (
-              // --- LIST VIEW ---
               <div className="flex-1 overflow-y-auto">
                 <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
                   <h3 className="font-oswald uppercase tracking-widest text-[#1b1b1b] flex items-center gap-2">
@@ -365,7 +402,6 @@ export default function EmailManager() {
                     <RefreshCw size={16} />
                   </button>
                 </div>
-
                 {!loading && inboxMessages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                     <Inbox size={48} className="mb-4 opacity-20" />
@@ -374,13 +410,11 @@ export default function EmailManager() {
                     </p>
                   </div>
                 )}
-
                 {loading && (
                   <div className="flex justify-center p-12 text-[#ce2a34]">
                     <Loader2 className="animate-spin" size={32} />
                   </div>
                 )}
-
                 <div className="divide-y divide-gray-100">
                   {inboxMessages.map((msg) => (
                     <div
@@ -407,17 +441,6 @@ export default function EmailManager() {
                           {msg.body_text}
                         </p>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center self-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(msg.id);
-                          }}
-                          className="p-2 text-gray-300 hover:text-red-500 rounded transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -429,61 +452,124 @@ export default function EmailManager() {
         {/* --- SENT TAB --- */}
         {activeTab === "sent" && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
-                <h3 className="font-oswald uppercase tracking-widest text-[#1b1b1b] flex items-center gap-2">
-                  <History size={18} className="text-[#ce2a34]" /> Sent Log
-                </h3>
-                <button
-                  onClick={fetchSentEmails}
-                  className="p-2 text-gray-400 hover:text-[#ce2a34] transition-all"
-                  title="Refresh"
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-
-              {!loading && sentMessages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                  <History size={48} className="mb-4 opacity-20" />
-                  <p className="font-mono text-sm uppercase">
-                    No sent history found.
-                  </p>
-                </div>
-              )}
-
-              {loading && (
-                <div className="flex justify-center p-12 text-[#ce2a34]">
-                  <Loader2 className="animate-spin" size={32} />
-                </div>
-              )}
-
-              <div className="divide-y divide-gray-100">
-                {sentMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className="p-5 hover:bg-gray-50 transition-colors flex gap-4 items-center"
+            {selectedSentMessage ? (
+              // --- SENT DETAIL VIEW ---
+              <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                  <button
+                    onClick={() => setSelectedSentMessage(null)}
+                    className="flex items-center gap-2 text-gray-500 hover:text-[#ce2a34] font-mono text-sm uppercase transition-colors"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-2">
-                        <span className="font-bold text-[#1b1b1b] truncate pr-2 text-sm flex items-center gap-2">
-                          To: {msg.to[0]}
-                        </span>
-                        <span className="text-xs font-mono text-gray-400 flex-shrink-0">
-                          {new Date(msg.created_at).toLocaleString()}
-                        </span>
+                    <ArrowLeft size={16} /> Back to List
+                  </button>
+                </div>
+
+                <div className="bg-gray-50 rounded p-6 mb-6 border border-gray-200">
+                  <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-xl font-oswald uppercase text-[#1b1b1b] pr-4">
+                      {selectedSentMessage.subject || "(No Subject)"}
+                    </h2>
+                    {getStatusBadge(selectedSentMessage.status)}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-body text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-[#ce2a34] text-white flex items-center justify-center font-bold">
+                        <User size={20} />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm text-gray-600 truncate mr-4">
-                          {msg.subject || "(No Subject)"}
-                        </h4>
-                        {getStatusBadge(msg.status)}
+                      <div>
+                        <p className="font-bold text-[#1b1b1b]">
+                          To:{" "}
+                          {Array.isArray(selectedSentMessage.to)
+                            ? selectedSentMessage.to.join(", ")
+                            : selectedSentMessage.to}
+                        </p>
+                        <p className="text-gray-500 text-xs uppercase tracking-wide">
+                          Customer Email
+                        </p>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 text-gray-500 bg-white px-3 py-1.5 rounded border border-gray-200 font-mono text-xs">
+                      <Calendar size={14} />
+                      {new Date(
+                        selectedSentMessage.created_at,
+                      ).toLocaleString()}
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="flex-1 bg-white rounded border border-gray-200 p-6 shadow-inner mb-6 min-h-[300px]">
+                  {loadingSentDetails ? (
+                    <div className="flex justify-center items-center h-full text-[#ce2a34]">
+                      <Loader2 className="animate-spin" size={32} />
+                    </div>
+                  ) : (
+                    <div
+                      className="prose max-w-none text-gray-700 font-body text-sm leading-relaxed email-content"
+                      dangerouslySetInnerHTML={{ __html: sentMessageHtml }}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              // --- SENT LIST VIEW ---
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
+                  <h3 className="font-oswald uppercase tracking-widest text-[#1b1b1b] flex items-center gap-2">
+                    <History size={18} className="text-[#ce2a34]" /> Sent Log
+                  </h3>
+                  <button
+                    onClick={fetchSentEmails}
+                    className="p-2 text-gray-400 hover:text-[#ce2a34] transition-all"
+                    title="Refresh"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                </div>
+
+                {!loading && sentMessages.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                    <History size={48} className="mb-4 opacity-20" />
+                    <p className="font-mono text-sm uppercase">
+                      No sent history found.
+                    </p>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="flex justify-center p-12 text-[#ce2a34]">
+                    <Loader2 className="animate-spin" size={32} />
+                  </div>
+                )}
+
+                <div className="divide-y divide-gray-100">
+                  {sentMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      onClick={() => handleViewSentEmail(msg)}
+                      className="p-5 hover:bg-gray-50 transition-colors cursor-pointer flex gap-4 items-center group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline mb-2">
+                          <span className="font-bold text-[#1b1b1b] truncate pr-2 text-sm flex items-center gap-2 group-hover:text-[#ce2a34] transition-colors">
+                            To: {msg.to[0]}
+                          </span>
+                          <span className="text-xs font-mono text-gray-400 flex-shrink-0">
+                            {new Date(msg.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm text-gray-600 truncate mr-4">
+                            {msg.subject || "(No Subject)"}
+                          </h4>
+                          {getStatusBadge(msg.status)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -497,7 +583,8 @@ export default function EmailManager() {
           </h4>
           <p className="text-sm text-gray-300 leading-relaxed font-body mb-4">
             <strong className="text-white">Outgoing:</strong> Processed via
-            Resend API. Check the Sent tab for delivery status.
+            Resend API. Check the Sent tab for live delivery status and read
+            receipts.
             <br />
             <br />
             <strong className="text-white">Incoming:</strong> Emails sent to
@@ -510,9 +597,9 @@ export default function EmailManager() {
             <AlertCircle size={16} className="text-[#ce2a34]" /> Pro Tip
           </h4>
           <p className="text-sm text-gray-600 font-body">
-            When you click <strong>Reply to Thread</strong>, the system
-            automatically quotes the client's original message and formats your
-            response using the Obsidian Labs HTML template.
+            When you click <strong>Reply to Thread</strong> in your inbox, the
+            system automatically quotes the client's original message and
+            formats your response using the Obsidian Labs HTML template.
           </p>
         </div>
       </div>

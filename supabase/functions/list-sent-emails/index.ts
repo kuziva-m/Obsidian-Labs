@@ -10,7 +10,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -20,10 +19,18 @@ serve(async (req) => {
       throw new Error("Missing RESEND_API_KEY environment variable");
     }
 
-    // Fetch the list of sent emails from Resend API
-    // We limit to 100 for better performance
-    const response = await fetch("https://api.resend.com/emails?limit=100", {
-      method: "GET",
+    let fetchUrl = "https://api.resend.com/emails?limit=100";
+
+    // If the React app sends a POST request with an ID, fetch that specific email's HTML body
+    if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      if (body.id) {
+        fetchUrl = `https://api.resend.com/emails/${body.id}`;
+      }
+    }
+
+    const response = await fetch(fetchUrl, {
+      method: "GET", // Resend always expects GET for fetching data
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
@@ -33,7 +40,7 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch emails from Resend");
+      throw new Error(data.message || "Failed to fetch from Resend");
     }
 
     return new Response(JSON.stringify(data), {
@@ -41,10 +48,8 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    // Safely check if the caught error is a standard Error object
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
-
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
