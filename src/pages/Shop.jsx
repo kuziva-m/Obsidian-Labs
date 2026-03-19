@@ -152,7 +152,7 @@ export default function Shop() {
   return (
     <div className="bg-[#f4f4f5] min-h-screen py-12">
       <SEO
-        title="Shop High-Purity Peptides | Obsidian Labs"
+        title="Shop High-Purity Peptides"
         description="Browse our range of batch-verified research peptides, blends, and mixing solutions. Fast dispatch Australia-wide from Melbourne."
       />
 

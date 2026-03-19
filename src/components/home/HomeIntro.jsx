@@ -15,7 +15,7 @@ export default function HomeIntro() {
         {/* SEO Heading */}
         <h1 className="font-oswald text-4xl md:text-5xl uppercase text-[#1b1b1b] mb-6 leading-tight">
           High-Purity Research Peptides <br />
-          <span className="text-[#ce2a34]">Australia</span> | Obsidian Labs
+          <span className="text-[#ce2a34]">Australia</span>
         </h1>
 
         {/* Description Text */}

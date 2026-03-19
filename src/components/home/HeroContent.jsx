@@ -29,10 +29,10 @@ export default function HeroContent() {
           </div>
 
           {/* MAIN TITLES */}
-          <h1 className="shipping-main-title">
+          <h2 className="shipping-main-title">
             AUSTRALIA WIDE <br />
             <span className="text-red-accent">EXPRESS DISPATCH</span>
-          </h1>
+          </h2>
 
           {/* PRICING DATA */}
           <div className="shipping-data-row">

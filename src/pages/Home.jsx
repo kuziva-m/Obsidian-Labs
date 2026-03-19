@@ -15,7 +15,7 @@ import "./Home.css";
 export default function Home() {
   return (
     <div className="home-container">
-      <SEO title="High-Purity Research Peptides Australia | Obsidian Labs" />
+      <SEO title="High-Purity Research Peptides Australia" />
       <Hero />
       <HomeIntro /> {/* 1. High-Purity Intro */}
       <HomeDetails /> {/* 2. Trusted Supplier Text */}
