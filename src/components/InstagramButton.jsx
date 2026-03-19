@@ -5,7 +5,7 @@ export default function InstagramButton() {
   const [isVisible, setIsVisible] = useState(true);
 
   // Updated Handle
-  const INSTAGRAM_USERNAME = "@Obsidianlabsau";
+  const INSTAGRAM_USERNAME = "obsidianlabsau";
 
   if (!isVisible) return null;
 
