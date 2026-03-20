@@ -8,6 +8,7 @@ import {
   Loader,
   CheckCircle,
   AlertTriangle,
+  MessageCircle, // Added for the WhatsApp icon
 } from "lucide-react";
 
 export default function Contact() {
@@ -87,6 +88,29 @@ export default function Contact() {
                   className="font-mono font-bold text-[#ce2a34] hover:text-[#1b1b1b] transition-colors"
                 >
                   support@obsidianlabs-au.com
+                </a>
+              </div>
+            </div>
+
+            {/* WhatsApp Card */}
+            <div className="bg-white p-6 rounded shadow-sm border border-gray-200 flex items-start gap-4 transition-transform hover:-translate-y-1">
+              <div className="bg-gray-50 text-[#ce2a34] p-4 rounded shrink-0 border border-gray-100">
+                <MessageCircle size={24} />
+              </div>
+              <div>
+                <h3 className="font-oswald uppercase text-xl text-[#1b1b1b] tracking-wide mb-1">
+                  WhatsApp Support
+                </h3>
+                <p className="text-gray-500 font-body text-sm mb-2">
+                  For quick questions and fast assistance from our team.
+                </p>
+                <a
+                  href="https://wa.me/61466457201"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono font-bold text-[#ce2a34] hover:text-[#1b1b1b] transition-colors"
+                >
+                  Message +61 466 457 201
                 </a>
               </div>
             </div>
