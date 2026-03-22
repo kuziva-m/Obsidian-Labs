@@ -1,24 +1,23 @@
 import { useState } from "react";
-import { Instagram, X } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 
-export default function InstagramButton() {
+export default function WhatsAppButton() {
   const [isVisible, setIsVisible] = useState(true);
 
-  // Updated Handle
-  const INSTAGRAM_USERNAME = "obsidianlabsau";
+  const WHATSAPP_NUMBER = "61466457201";
 
   if (!isVisible) return null;
 
   return (
     <div
-      className="insta-float-container"
+      className="whatsapp-float-container"
       style={{
         zIndex: 9990,
         animation: "fadeIn 0.5s ease",
       }}
     >
       <a
-        href={`https://ig.me/m/${INSTAGRAM_USERNAME}`}
+        href={`https://wa.me/${WHATSAPP_NUMBER}`}
         target="_blank"
         rel="noopener noreferrer"
         style={{
@@ -50,8 +49,8 @@ export default function InstagramButton() {
           e.currentTarget.style.boxShadow = "0 4px 15px rgba(206, 42, 52, 0.3)";
         }}
       >
-        <Instagram size={20} className="text-[#ce2a34]" /> {/* Red Icon */}
-        <span>Chat on Insta</span>
+        <MessageCircle size={20} className="text-[#ce2a34]" /> {/* Red Icon */}
+        <span>Chat on WhatsApp</span>
       </a>
 
       <button
@@ -81,7 +80,7 @@ export default function InstagramButton() {
       </button>
 
       <style>{`
-        .insta-float-container {
+        .whatsapp-float-container {
           position: fixed;
           bottom: 24px;
           right: 24px;
