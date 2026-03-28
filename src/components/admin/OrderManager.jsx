@@ -17,6 +17,13 @@ import {
   ArrowDownUp,
   DollarSign,
   TrendingUp,
+  Filter,
+  Calendar,
+  MapPin,
+  Star,
+  UserCheck,
+  Box,
+  X,
 } from "lucide-react";
 
 export default function OrderManager() {
@@ -24,16 +31,25 @@ export default function OrderManager() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // Tab & Search states
+  // --- CORE SEARCH & SORT STATES ---
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date_desc");
 
+  // --- ADVANCED FILTER STATES ---
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterDateRange, setFilterDateRange] = useState("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [filterProduct, setFilterProduct] = useState("all");
+  const [filterVIP, setFilterVIP] = useState(false);
+  const [filterCustomerType, setFilterCustomerType] = useState("all");
+  const [filterState, setFilterState] = useState("all");
+  const [filterUnfilled, setFilterUnfilled] = useState(false);
+
   // Modal states
   const [trackingInput, setTrackingInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // Edit states
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(null);
 
@@ -52,7 +68,6 @@ export default function OrderManager() {
     fetchOrders();
   }, []);
 
-  // Set up edit data when a new order is selected or when entering edit mode
   useEffect(() => {
     if (selectedOrder) {
       setEditData({
@@ -60,10 +75,11 @@ export default function OrderManager() {
         customer_email: selectedOrder.customer_email,
         shipping_address: { ...selectedOrder.shipping_address },
       });
-      setIsEditing(false); // Reset edit mode when switching orders
+      setIsEditing(false);
     }
   }, [selectedOrder]);
 
+  // --- ACTIONS ---
   const handleUpdateStatus = async (orderId, newStatus) => {
     setIsUpdating(true);
     try {
@@ -76,7 +92,6 @@ export default function OrderManager() {
         .eq("id", orderId);
       if (error) throw error;
 
-      // Automatically trigger email to customer
       if (newStatus === "shipped" || newStatus === "processing") {
         await supabase.functions.invoke("send-email", {
           body: {
@@ -132,22 +147,16 @@ export default function OrderManager() {
 
   const handleDeleteOrder = async () => {
     if (
-      !window.confirm(
-        "Are you sure you want to permanently delete this order? This cannot be undone.",
-      )
-    ) {
+      !window.confirm("Are you sure you want to permanently delete this order?")
+    )
       return;
-    }
-
     setIsUpdating(true);
     try {
       const { error } = await supabase
         .from("orders")
         .delete()
         .eq("id", selectedOrder.id);
-
       if (error) throw error;
-
       setSelectedOrder(null);
       fetchOrders();
     } catch (err) {
@@ -168,6 +177,19 @@ export default function OrderManager() {
     }
   };
 
+  const resetFilters = () => {
+    setFilterDateRange("all");
+    setCustomStartDate("");
+    setCustomEndDate("");
+    setFilterProduct("all");
+    setFilterVIP(false);
+    setFilterCustomerType("all");
+    setFilterState("all");
+    setFilterUnfilled(false);
+    setSearchQuery("");
+  };
+
+  // --- HELPERS ---
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
@@ -205,6 +227,35 @@ export default function OrderManager() {
     return "";
   };
 
+  // --- DYNAMIC FILTER DATA EXTRACTION ---
+  const { uniqueProducts, uniqueStates, customerOrderCounts } = useMemo(() => {
+    const products = new Set();
+    const states = new Set();
+    const emailCounts = {};
+
+    orders.forEach((order) => {
+      // Products
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach((item) => products.add(item.name));
+      }
+      // States
+      if (order.shipping_address?.state) {
+        states.add(order.shipping_address.state.toUpperCase());
+      }
+      // Customer Loyalty
+      if (order.customer_email) {
+        emailCounts[order.customer_email] =
+          (emailCounts[order.customer_email] || 0) + 1;
+      }
+    });
+
+    return {
+      uniqueProducts: Array.from(products).sort(),
+      uniqueStates: Array.from(states).sort(),
+      customerOrderCounts: emailCounts,
+    };
+  }, [orders]);
+
   // --- METRICS CALCULATION ---
   const metrics = useMemo(() => {
     const totalRevenue = orders.reduce(
@@ -219,27 +270,96 @@ export default function OrderManager() {
     };
   }, [orders]);
 
-  // --- FILTER & SORT LOGIC ---
+  // --- MASTER FILTER & SORT LOGIC ---
   const processedOrders = useMemo(() => {
     let result = orders;
 
     // 1. Tab Filter
-    if (activeTab !== "all") {
-      result = result.filter((order) => order.status === activeTab);
-    }
+    if (activeTab !== "all")
+      result = result.filter((o) => o.status === activeTab);
 
-    // 2. Search Query Filter
+    // 2. Text Search
     if (searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        (order) =>
-          order.customer_name?.toLowerCase().includes(query) ||
-          order.customer_email?.toLowerCase().includes(query) ||
-          order.id?.toLowerCase().includes(query),
+        (o) =>
+          o.customer_name?.toLowerCase().includes(query) ||
+          o.customer_email?.toLowerCase().includes(query) ||
+          o.id?.toLowerCase().includes(query),
       );
     }
 
-    // 3. Sorting
+    // 3. Time Filter
+    if (filterDateRange !== "all") {
+      const now = new Date();
+      result = result.filter((o) => {
+        const orderDate = new Date(o.created_at);
+        if (filterDateRange === "this_month") {
+          return (
+            orderDate.getMonth() === now.getMonth() &&
+            orderDate.getFullYear() === now.getFullYear()
+          );
+        }
+        if (filterDateRange === "last_month") {
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          return (
+            orderDate.getMonth() === lastMonth.getMonth() &&
+            orderDate.getFullYear() === lastMonth.getFullYear()
+          );
+        }
+        if (filterDateRange === "last_90") {
+          const ninetyDaysAgo = new Date();
+          ninetyDaysAgo.setDate(now.getDate() - 90);
+          return orderDate >= ninetyDaysAgo;
+        }
+        if (filterDateRange === "custom" && customStartDate && customEndDate) {
+          const start = new Date(customStartDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(customEndDate);
+          end.setHours(23, 59, 59, 999);
+          return orderDate >= start && orderDate <= end;
+        }
+        return true;
+      });
+    }
+
+    // 4. Product Filter
+    if (filterProduct !== "all") {
+      result = result.filter((o) =>
+        o.items?.some((item) => item.name === filterProduct),
+      );
+    }
+
+    // 5. VIP Filter (> $500)
+    if (filterVIP) {
+      result = result.filter((o) => o.total_amount >= 500);
+    }
+
+    // 6. Customer Type (New vs Returning)
+    if (filterCustomerType !== "all") {
+      result = result.filter((o) => {
+        const isReturning = customerOrderCounts[o.customer_email] > 1;
+        return filterCustomerType === "returning" ? isReturning : !isReturning;
+      });
+    }
+
+    // 7. State/Location Filter
+    if (filterState !== "all") {
+      result = result.filter(
+        (o) => o.shipping_address?.state?.toUpperCase() === filterState,
+      );
+    }
+
+    // 8. Unfilled/Needs Tracking Filter
+    if (filterUnfilled) {
+      result = result.filter(
+        (o) =>
+          o.status === "processing" &&
+          (!o.tracking_number || o.tracking_number === ""),
+      );
+    }
+
+    // 9. Sorting
     result = [...result].sort((a, b) => {
       switch (sortBy) {
         case "date_desc":
@@ -256,7 +376,30 @@ export default function OrderManager() {
     });
 
     return result;
-  }, [orders, activeTab, searchQuery, sortBy]);
+  }, [
+    orders,
+    activeTab,
+    searchQuery,
+    sortBy,
+    filterDateRange,
+    customStartDate,
+    customEndDate,
+    filterProduct,
+    filterVIP,
+    filterCustomerType,
+    filterState,
+    filterUnfilled,
+    customerOrderCounts,
+  ]);
+
+  const activeFilterCount = [
+    filterDateRange !== "all",
+    filterProduct !== "all",
+    filterVIP,
+    filterCustomerType !== "all",
+    filterState !== "all",
+    filterUnfilled,
+  ].filter(Boolean).length;
 
   if (loading)
     return (
@@ -266,9 +409,9 @@ export default function OrderManager() {
     );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       {/* QUICK METRICS DASHBOARD */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded border border-gray-200 shadow-sm flex items-center gap-4">
           <div className="bg-green-50 p-3 rounded-full text-green-600 border border-green-100">
             <DollarSign size={24} />
@@ -310,21 +453,182 @@ export default function OrderManager() {
         </div>
       </div>
 
-      <div className="bg-white rounded shadow-sm border border-gray-200">
-        <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50 space-y-4">
+      <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50 space-y-5">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <h2 className="font-oswald text-xl md:text-2xl uppercase text-[#1b1b1b]">
               Order Management
             </h2>
-            <button
-              onClick={fetchOrders}
-              className="hidden md:flex items-center gap-2 text-xs md:text-sm font-mono text-gray-500 hover:text-[#ce2a34]"
-            >
-              <RefreshCw size={16} /> Refresh
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-colors border ${showFilters || activeFilterCount > 0 ? "bg-[#ce2a34] text-white border-[#ce2a34]" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"}`}
+              >
+                <Filter size={16} />
+                Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </button>
+              <button
+                onClick={fetchOrders}
+                className="hidden md:flex items-center gap-2 text-xs md:text-sm font-mono text-gray-500 hover:text-[#ce2a34] bg-white px-3 py-2 border border-gray-300 rounded"
+              >
+                <RefreshCw size={16} />
+              </button>
+            </div>
           </div>
 
-          {/* ADVANCED CONTROLS: SEARCH, SORT, TABS */}
+          {/* ADVANCED FILTERS PANEL */}
+          {showFilters && (
+            <div className="bg-white p-5 rounded border border-gray-200 shadow-inner grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-200 relative">
+              <button
+                onClick={resetFilters}
+                className="absolute top-4 right-4 text-xs font-bold uppercase text-gray-400 hover:text-[#ce2a34] flex items-center gap-1"
+              >
+                <X size={14} /> Clear All
+              </button>
+
+              {/* Time Range */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <Calendar size={14} className="text-[#ce2a34]" /> Date Range
+                </label>
+                <select
+                  value={filterDateRange}
+                  onChange={(e) => setFilterDateRange(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none focus:border-[#1b1b1b]"
+                >
+                  <option value="all">All Time</option>
+                  <option value="this_month">This Month</option>
+                  <option value="last_month">Last Month</option>
+                  <option value="last_90">Last 90 Days</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+                {filterDateRange === "custom" && (
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-1/2 p-2 border border-gray-300 rounded text-xs text-gray-600"
+                    />
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="w-1/2 p-2 border border-gray-300 rounded text-xs text-gray-600"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Compound Filter */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <Box size={14} className="text-[#ce2a34]" /> Filter by
+                  Compound
+                </label>
+                <select
+                  value={filterProduct}
+                  onChange={(e) => setFilterProduct(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none focus:border-[#1b1b1b]"
+                >
+                  <option value="all">All Products</option>
+                  {uniqueProducts.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Location Filter */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <MapPin size={14} className="text-[#ce2a34]" /> Delivery State
+                </label>
+                <select
+                  value={filterState}
+                  onChange={(e) => setFilterState(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none focus:border-[#1b1b1b]"
+                >
+                  <option value="all">All States</option>
+                  {uniqueStates.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Customer Loyalty / VIP */}
+              <div className="space-y-3 lg:col-span-2 bg-gray-50 p-3 rounded border border-gray-100">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <UserCheck size={14} className="text-[#ce2a34]" /> Customer
+                  Insights
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+                    <input
+                      type="radio"
+                      name="custType"
+                      checked={filterCustomerType === "all"}
+                      onChange={() => setFilterCustomerType("all")}
+                      className="accent-[#ce2a34]"
+                    />{" "}
+                    All
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+                    <input
+                      type="radio"
+                      name="custType"
+                      checked={filterCustomerType === "new"}
+                      onChange={() => setFilterCustomerType("new")}
+                      className="accent-[#ce2a34]"
+                    />{" "}
+                    New Customers
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+                    <input
+                      type="radio"
+                      name="custType"
+                      checked={filterCustomerType === "returning"}
+                      onChange={() => setFilterCustomerType("returning")}
+                      className="accent-[#ce2a34]"
+                    />{" "}
+                    Returning Regulars
+                  </label>
+                </div>
+              </div>
+
+              {/* Actionable Toggles */}
+              <div className="space-y-3 bg-gray-50 p-3 rounded border border-gray-100">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <Star size={14} className="text-[#ce2a34]" /> High Priority
+                </label>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={filterVIP}
+                      onChange={(e) => setFilterVIP(e.target.checked)}
+                      className="accent-[#ce2a34] w-4 h-4 rounded"
+                    />
+                    VIP Orders (&gt;$500)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={filterUnfilled}
+                      onChange={(e) => setFilterUnfilled(e.target.checked)}
+                      className="accent-[#ce2a34] w-4 h-4 rounded"
+                    />
+                    Awaiting Fulfillment (Needs Tracking)
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BASIC CONTROLS: SEARCH, SORT, TABS */}
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
             {/* TABS */}
             <div className="flex flex-wrap gap-2">
@@ -332,7 +636,7 @@ export default function OrderManager() {
                 onClick={() => setActiveTab("all")}
                 className={`px-4 py-2 text-xs font-bold uppercase rounded transition-colors ${activeTab === "all" ? "bg-[#1b1b1b] text-white" : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-100"}`}
               >
-                All Orders
+                All
               </button>
               <button
                 onClick={() => setActiveTab("pending")}
@@ -406,6 +710,9 @@ export default function OrderManager() {
                   Customer
                 </th>
                 <th className="p-4 font-mono text-xs text-gray-500 uppercase">
+                  Location
+                </th>
+                <th className="p-4 font-mono text-xs text-gray-500 uppercase">
                   Total
                 </th>
                 <th className="p-4 font-mono text-xs text-gray-500 uppercase">
@@ -417,43 +724,61 @@ export default function OrderManager() {
               </tr>
             </thead>
             <tbody>
-              {processedOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="p-4 font-mono text-sm text-[#ce2a34] font-bold">
-                    #{order.id.slice(0, 8).toUpperCase()}
-                  </td>
-                  <td className="p-4 text-sm text-gray-600">
-                    {new Date(order.created_at).toLocaleString()}
-                  </td>
-                  <td className="p-4">
-                    <div className="font-bold text-[#1b1b1b] text-sm">
-                      {order.customer_name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {order.customer_email}
-                    </div>
-                  </td>
-                  <td className="p-4 font-oswald text-lg">
-                    ${order.total_amount.toFixed(2)}
-                  </td>
-                  <td className="p-4">{getStatusBadge(order.status)}</td>
-                  <td className="p-4 text-center">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-3 py-1.5 rounded text-xs font-oswald uppercase tracking-widest hover:bg-[#ce2a34] transition-colors"
-                    >
-                      <Eye size={14} /> View
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {processedOrders.map((order) => {
+                const isReturning =
+                  customerOrderCounts[order.customer_email] > 1;
+                return (
+                  <tr
+                    key={order.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="p-4 font-mono text-sm text-[#ce2a34] font-bold">
+                      #{order.id.slice(0, 8).toUpperCase()}
+                    </td>
+                    <td className="p-4 text-sm text-gray-600">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="p-4">
+                      <div className="font-bold text-[#1b1b1b] text-sm flex items-center gap-2">
+                        {order.customer_name}
+                        {isReturning && (
+                          <span
+                            title="Returning Customer"
+                            className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded uppercase tracking-widest"
+                          >
+                            VIP
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.customer_email}
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm font-bold text-gray-500">
+                      {order.shipping_address?.state?.toUpperCase() || "N/A"}
+                    </td>
+                    <td className="p-4 font-oswald text-lg">
+                      ${order.total_amount.toFixed(2)}
+                    </td>
+                    <td className="p-4">{getStatusBadge(order.status)}</td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-3 py-1.5 rounded text-xs font-oswald uppercase tracking-widest hover:bg-[#ce2a34] transition-colors"
+                      >
+                        <Eye size={14} /> View
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
               {processedOrders.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-gray-500">
-                    No orders matched your search or filters.
+                  <td
+                    colSpan="7"
+                    className="p-10 text-center text-gray-500 bg-gray-50 font-mono text-sm uppercase"
+                  >
+                    No orders match your filter criteria.
                   </td>
                 </tr>
               )}
@@ -463,46 +788,58 @@ export default function OrderManager() {
 
         {/* MOBILE VIEW (Card List) */}
         <div className="md:hidden flex flex-col">
-          {processedOrders.map((order) => (
-            <div
-              key={order.id}
-              className="p-4 border-b border-gray-100 flex flex-col gap-3"
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-mono text-sm text-[#ce2a34] font-bold">
-                  #{order.id.slice(0, 8).toUpperCase()}
-                </span>
-                {getStatusBadge(order.status)}
-              </div>
-              <div>
-                <div className="font-bold text-[#1b1b1b] text-sm">
-                  {order.customer_name}
+          {processedOrders.map((order) => {
+            const isReturning = customerOrderCounts[order.customer_email] > 1;
+            return (
+              <div
+                key={order.id}
+                className="p-4 border-b border-gray-100 flex flex-col gap-3"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-mono text-sm text-[#ce2a34] font-bold">
+                    #{order.id.slice(0, 8).toUpperCase()}
+                  </span>
+                  {getStatusBadge(order.status)}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {order.customer_email}
-                </div>
-              </div>
-              <div className="flex justify-between items-end mt-2">
                 <div>
-                  <span className="text-xs text-gray-400 block mb-1">
-                    {new Date(order.created_at).toLocaleString()}
-                  </span>
-                  <span className="font-oswald text-lg">
-                    ${order.total_amount.toFixed(2)}
-                  </span>
+                  <div className="font-bold text-[#1b1b1b] text-sm flex items-center gap-2">
+                    {order.customer_name}
+                    {isReturning && (
+                      <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded uppercase tracking-widest">
+                        VIP
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {order.customer_email}
+                  </div>
+                  <div className="text-xs font-bold text-gray-400 mt-1">
+                    State:{" "}
+                    {order.shipping_address?.state?.toUpperCase() || "N/A"}
+                  </div>
                 </div>
-                <button
-                  onClick={() => setSelectedOrder(order)}
-                  className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-4 py-2 rounded text-xs font-oswald uppercase tracking-widest active:bg-[#ce2a34]"
-                >
-                  <Eye size={14} /> Details
-                </button>
+                <div className="flex justify-between items-end mt-2">
+                  <div>
+                    <span className="text-xs text-gray-400 block mb-1">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </span>
+                    <span className="font-oswald text-lg">
+                      ${order.total_amount.toFixed(2)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="inline-flex items-center gap-2 bg-[#1b1b1b] text-white px-4 py-2 rounded text-xs font-oswald uppercase tracking-widest active:bg-[#ce2a34]"
+                  >
+                    <Eye size={14} /> Details
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {processedOrders.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-              No orders matched your search or filters.
+            <div className="p-8 text-center text-gray-500 font-mono text-sm uppercase bg-gray-50">
+              No orders match filters.
             </div>
           )}
         </div>
@@ -511,7 +848,6 @@ export default function OrderManager() {
         {selectedOrder && (
           <div className="fixed inset-0 bg-black/90 flex flex-col md:items-center md:justify-center p-0 md:p-4 z-50 backdrop-blur-sm">
             <div className="bg-white w-full h-full md:h-auto md:max-h-[90vh] md:w-full md:max-w-4xl md:rounded flex flex-col shadow-2xl relative">
-              {/* Modal Header */}
               <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center bg-[#1b1b1b] text-white md:rounded-t shrink-0 sticky top-0 z-10">
                 <div>
                   <h3 className="font-oswald text-xl md:text-2xl uppercase tracking-widest leading-none">
@@ -529,7 +865,6 @@ export default function OrderManager() {
                 </button>
               </div>
 
-              {/* Modal Scrollable Body */}
               <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 overflow-y-auto pb-24 md:pb-8">
                 {/* Left Col (Customer Info & Proof) */}
                 <div>
@@ -545,7 +880,6 @@ export default function OrderManager() {
                   </div>
 
                   {!isEditing ? (
-                    // VIEW MODE
                     <>
                       <p className="font-bold text-[#1b1b1b]">
                         {selectedOrder.customer_name}
@@ -573,7 +907,6 @@ export default function OrderManager() {
                       </div>
                     </>
                   ) : (
-                    // EDIT MODE
                     <div className="space-y-4 bg-blue-50/50 p-4 rounded border border-blue-100">
                       <div>
                         <label className="text-xs text-gray-500 font-bold uppercase">
@@ -601,7 +934,6 @@ export default function OrderManager() {
                           className="w-full p-2 border border-gray-300 rounded text-sm"
                         />
                       </div>
-
                       <div className="pt-2 mt-2 border-t border-gray-200">
                         <label className="text-xs text-gray-500 font-bold uppercase">
                           Address Name
@@ -614,7 +946,6 @@ export default function OrderManager() {
                           }
                           className="w-full p-2 border border-gray-300 rounded text-sm mb-2"
                         />
-
                         <label className="text-xs text-gray-500 font-bold uppercase">
                           Street Address
                         </label>
@@ -626,7 +957,6 @@ export default function OrderManager() {
                           }
                           className="w-full p-2 border border-gray-300 rounded text-sm mb-2"
                         />
-
                         <div className="grid grid-cols-2 gap-2 mb-2">
                           <div>
                             <label className="text-xs text-gray-500 font-bold uppercase">
@@ -655,7 +985,6 @@ export default function OrderManager() {
                             />
                           </div>
                         </div>
-
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="text-xs text-gray-500 font-bold uppercase">
@@ -772,7 +1101,6 @@ export default function OrderManager() {
                       {getStatusBadge(selectedOrder.status)}
                     </div>
 
-                    {/* EDIT MODE TOGGLES */}
                     <div className="flex gap-2">
                       {!isEditing ? (
                         <button
@@ -806,7 +1134,6 @@ export default function OrderManager() {
                       )}
                     </div>
 
-                    {/* APPROVE BUTTON */}
                     {selectedOrder.status === "pending" && (
                       <button
                         onClick={() =>
@@ -825,7 +1152,6 @@ export default function OrderManager() {
                       </button>
                     )}
 
-                    {/* SHIP BUTTON */}
                     {selectedOrder.status === "processing" && (
                       <div className="space-y-3 pt-2">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block">
@@ -868,7 +1194,6 @@ export default function OrderManager() {
                       </div>
                     )}
 
-                    {/* DELETE BUTTON */}
                     <div className="pt-4 mt-4 border-t border-gray-100">
                       <button
                         onClick={handleDeleteOrder}
