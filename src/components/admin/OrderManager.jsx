@@ -39,6 +39,7 @@ export default function OrderManager() {
   // --- ADVANCED FILTER STATES ---
   const [showFilters, setShowFilters] = useState(false);
   const [filterDateRange, setFilterDateRange] = useState("all");
+  const [filterMonth, setFilterMonth] = useState("all"); // NEW: Specific Month Filter
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [filterProduct, setFilterProduct] = useState("all");
@@ -179,6 +180,7 @@ export default function OrderManager() {
 
   const resetFilters = () => {
     setFilterDateRange("all");
+    setFilterMonth("all"); // Reset the new filter
     setCustomStartDate("");
     setCustomEndDate("");
     setFilterProduct("all");
@@ -228,33 +230,56 @@ export default function OrderManager() {
   };
 
   // --- DYNAMIC FILTER DATA EXTRACTION ---
-  const { uniqueProducts, uniqueStates, customerOrderCounts } = useMemo(() => {
-    const products = new Set();
-    const states = new Set();
-    const emailCounts = {};
+  const { uniqueProducts, uniqueStates, customerOrderCounts, uniqueMonths } =
+    useMemo(() => {
+      const products = new Set();
+      const states = new Set();
+      const emailCounts = {};
+      const monthsSet = new Set();
 
-    orders.forEach((order) => {
-      // Products
-      if (order.items && Array.isArray(order.items)) {
-        order.items.forEach((item) => products.add(item.name));
-      }
-      // States
-      if (order.shipping_address?.state) {
-        states.add(order.shipping_address.state.toUpperCase());
-      }
-      // Customer Loyalty
-      if (order.customer_email) {
-        emailCounts[order.customer_email] =
-          (emailCounts[order.customer_email] || 0) + 1;
-      }
-    });
+      orders.forEach((order) => {
+        // Products
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item) => products.add(item.name));
+        }
+        // States
+        if (order.shipping_address?.state) {
+          states.add(order.shipping_address.state.toUpperCase());
+        }
+        // Customer Loyalty
+        if (order.customer_email) {
+          emailCounts[order.customer_email] =
+            (emailCounts[order.customer_email] || 0) + 1;
+        }
+        // Months (Format: YYYY-MM for logic, e.g. 2026-03)
+        if (order.created_at) {
+          const d = new Date(order.created_at);
+          const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          monthsSet.add(yearMonth);
+        }
+      });
 
-    return {
-      uniqueProducts: Array.from(products).sort(),
-      uniqueStates: Array.from(states).sort(),
-      customerOrderCounts: emailCounts,
-    };
-  }, [orders]);
+      // Sort months descending (Newest to Oldest)
+      const sortedMonths = Array.from(monthsSet)
+        .sort()
+        .reverse()
+        .map((val) => {
+          const [year, month] = val.split("-");
+          const date = new Date(year, month - 1, 1);
+          const label = date.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          }); // e.g. "March 2026"
+          return { value: val, label };
+        });
+
+      return {
+        uniqueProducts: Array.from(products).sort(),
+        uniqueStates: Array.from(states).sort(),
+        customerOrderCounts: emailCounts,
+        uniqueMonths: sortedMonths,
+      };
+    }, [orders]);
 
   // --- METRICS CALCULATION ---
   const metrics = useMemo(() => {
@@ -289,7 +314,16 @@ export default function OrderManager() {
       );
     }
 
-    // 3. Time Filter
+    // 3. Dynamic Month Filter
+    if (filterMonth !== "all") {
+      result = result.filter((o) => {
+        const d = new Date(o.created_at);
+        const orderMonthVal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return orderMonthVal === filterMonth;
+      });
+    }
+
+    // 4. Time Range Filter
     if (filterDateRange !== "all") {
       const now = new Date();
       result = result.filter((o) => {
@@ -323,19 +357,19 @@ export default function OrderManager() {
       });
     }
 
-    // 4. Product Filter
+    // 5. Product Filter
     if (filterProduct !== "all") {
       result = result.filter((o) =>
         o.items?.some((item) => item.name === filterProduct),
       );
     }
 
-    // 5. VIP Filter (> $500)
+    // 6. VIP Filter (> $500)
     if (filterVIP) {
       result = result.filter((o) => o.total_amount >= 500);
     }
 
-    // 6. Customer Type (New vs Returning)
+    // 7. Customer Type (New vs Returning)
     if (filterCustomerType !== "all") {
       result = result.filter((o) => {
         const isReturning = customerOrderCounts[o.customer_email] > 1;
@@ -343,14 +377,14 @@ export default function OrderManager() {
       });
     }
 
-    // 7. State/Location Filter
+    // 8. State/Location Filter
     if (filterState !== "all") {
       result = result.filter(
         (o) => o.shipping_address?.state?.toUpperCase() === filterState,
       );
     }
 
-    // 8. Unfilled/Needs Tracking Filter
+    // 9. Unfilled/Needs Tracking Filter
     if (filterUnfilled) {
       result = result.filter(
         (o) =>
@@ -359,7 +393,7 @@ export default function OrderManager() {
       );
     }
 
-    // 9. Sorting
+    // 10. Sorting
     result = [...result].sort((a, b) => {
       switch (sortBy) {
         case "date_desc":
@@ -381,6 +415,7 @@ export default function OrderManager() {
     activeTab,
     searchQuery,
     sortBy,
+    filterMonth,
     filterDateRange,
     customStartDate,
     customEndDate,
@@ -394,6 +429,7 @@ export default function OrderManager() {
 
   const activeFilterCount = [
     filterDateRange !== "all",
+    filterMonth !== "all",
     filterProduct !== "all",
     filterVIP,
     filterCustomerType !== "all",
@@ -478,46 +514,34 @@ export default function OrderManager() {
 
           {/* ADVANCED FILTERS PANEL */}
           {showFilters && (
-            <div className="bg-white p-5 rounded border border-gray-200 shadow-inner grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-200 relative">
+            <div className="bg-white p-5 rounded border border-gray-200 shadow-inner grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4 duration-200 relative">
               <button
                 onClick={resetFilters}
-                className="absolute top-4 right-4 text-xs font-bold uppercase text-gray-400 hover:text-[#ce2a34] flex items-center gap-1"
+                className="absolute top-4 right-4 text-xs font-bold uppercase text-gray-400 hover:text-[#ce2a34] flex items-center gap-1 z-10"
               >
                 <X size={14} /> Clear All
               </button>
 
-              {/* Time Range */}
+              {/* Order Month (NEW) */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                  <Calendar size={14} className="text-[#ce2a34]" /> Date Range
+                  <Calendar size={14} className="text-[#ce2a34]" /> Order Month
                 </label>
                 <select
-                  value={filterDateRange}
-                  onChange={(e) => setFilterDateRange(e.target.value)}
+                  value={filterMonth}
+                  onChange={(e) => {
+                    setFilterMonth(e.target.value);
+                    setFilterDateRange("all");
+                  }}
                   className="w-full p-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none focus:border-[#1b1b1b]"
                 >
-                  <option value="all">All Time</option>
-                  <option value="this_month">This Month</option>
-                  <option value="last_month">Last Month</option>
-                  <option value="last_90">Last 90 Days</option>
-                  <option value="custom">Custom Range</option>
+                  <option value="all">All Months</option>
+                  {uniqueMonths.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
                 </select>
-                {filterDateRange === "custom" && (
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="date"
-                      value={customStartDate}
-                      onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="w-1/2 p-2 border border-gray-300 rounded text-xs text-gray-600"
-                    />
-                    <input
-                      type="date"
-                      value={customEndDate}
-                      onChange={(e) => setCustomEndDate(e.target.value)}
-                      className="w-1/2 p-2 border border-gray-300 rounded text-xs text-gray-600"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Compound Filter */}
@@ -559,8 +583,46 @@ export default function OrderManager() {
                 </select>
               </div>
 
+              {/* Advanced Range Options */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <Clock size={14} className="text-[#ce2a34]" /> Quick Date
+                  Range
+                </label>
+                <select
+                  value={filterDateRange}
+                  onChange={(e) => {
+                    setFilterDateRange(e.target.value);
+                    setFilterMonth("all");
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none focus:border-[#1b1b1b]"
+                >
+                  <option value="all">Any Range</option>
+                  <option value="this_month">This Month</option>
+                  <option value="last_month">Last Month</option>
+                  <option value="last_90">Last 90 Days</option>
+                  <option value="custom">Custom Range...</option>
+                </select>
+                {filterDateRange === "custom" && (
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-1/2 p-2 border border-gray-300 rounded text-xs text-gray-600"
+                    />
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="w-1/2 p-2 border border-gray-300 rounded text-xs text-gray-600"
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* Customer Loyalty / VIP */}
-              <div className="space-y-3 lg:col-span-2 bg-gray-50 p-3 rounded border border-gray-100">
+              <div className="space-y-3 md:col-span-2 bg-gray-50 p-3 rounded border border-gray-100">
                 <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
                   <UserCheck size={14} className="text-[#ce2a34]" /> Customer
                   Insights
@@ -600,11 +662,11 @@ export default function OrderManager() {
               </div>
 
               {/* Actionable Toggles */}
-              <div className="space-y-3 bg-gray-50 p-3 rounded border border-gray-100">
+              <div className="space-y-3 md:col-span-2 bg-gray-50 p-3 rounded border border-gray-100">
                 <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                  <Star size={14} className="text-[#ce2a34]" /> High Priority
+                  <Star size={14} className="text-[#ce2a34]" /> Priority Tags
                 </label>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
                     <input
                       type="checkbox"
@@ -621,7 +683,7 @@ export default function OrderManager() {
                       onChange={(e) => setFilterUnfilled(e.target.checked)}
                       className="accent-[#ce2a34] w-4 h-4 rounded"
                     />
-                    Awaiting Fulfillment (Needs Tracking)
+                    Needs Tracking (Unfulfilled)
                   </label>
                 </div>
               </div>
