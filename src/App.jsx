@@ -17,7 +17,7 @@ import CartDrawer from "./components/CartDrawer";
 import FAQ from "./pages/FAQ";
 import ResearchLibrary from "./pages/ResearchLibrary";
 import ResearchDivisions from "./pages/ResearchDivisions";
-import WhatsAppButton from "./components/WhatsAppButton";
+import InstagramButton from "./components/InstagramButton";
 import Terms from "./pages/Terms";
 import Quality from "./pages/Quality";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -44,7 +44,7 @@ function App() {
       <AgeVerification />
       <HolidayPopup /> {/* <-- ADDED IT HERE */}
       <CartDrawer />
-      <WhatsAppButton />
+      <InstagramButton />
       {!isHiddenRoute && (
         <div className="w-full z-50 flex flex-col relative">
           <Navbar />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CalendarAlert, X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 export default function HolidayPopup() {
   const [isVisible, setIsVisible] = useState(false);
@@ -28,7 +28,7 @@ export default function HolidayPopup() {
       <div className="bg-white max-w-md w-full rounded-sm shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300 border-2 border-[#1b1b1b]">
         {/* Red Header Bar */}
         <div className="bg-[#ce2a34] p-6 text-center border-b-4 border-[#1b1b1b]">
-          <CalendarAlert size={48} className="text-white mx-auto mb-3" />
+          <AlertTriangle size={48} className="text-white mx-auto mb-3" />
           <h2 className="font-oswald text-2xl md:text-3xl text-white uppercase tracking-widest">
             Holiday Notice
           </h2>
