@@ -1,7 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import AgeVerification from "./components/AgeVerification";
-import HolidayPopup from "./components/HolidayPopup"; // <-- IMPORTED THE NEW POPUP
+import AnnouncementBar from "./components/AnnouncementBar";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -42,14 +42,16 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen relative">
       <AgeVerification />
-      <HolidayPopup /> {/* <-- ADDED IT HERE */}
       <CartDrawer />
       <InstagramButton />
+
       {!isHiddenRoute && (
         <div className="w-full z-50 flex flex-col relative">
+          <AnnouncementBar />
           <Navbar />
         </div>
       )}
+
       <div className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
