@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-import { useEffect } from "react"; // <-- IMPORTED useEffect
+import { useEffect } from "react";
 import AgeVerification from "./components/AgeVerification";
 import AnnouncementBar from "./components/AnnouncementBar";
 import Navbar from "./components/Navbar";
@@ -17,11 +17,11 @@ import CartDrawer from "./components/CartDrawer";
 import FAQ from "./pages/FAQ";
 import ResearchLibrary from "./pages/ResearchLibrary";
 import ResearchDivisions from "./pages/ResearchDivisions";
-import InstagramButton from "./components/InstagramButton";
+import WhatsAppButton from "./components/WhatsAppButton"; // <-- FIXED IMPORT
 import Terms from "./pages/Terms";
 import Quality from "./pages/Quality";
 import RefundPolicy from "./pages/RefundPolicy";
-import Contact from "./pages/Contact"; // <-- NEW IMPORT
+import Contact from "./pages/Contact";
 
 function App() {
   const location = useLocation();
@@ -40,12 +40,17 @@ function App() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
       <AgeVerification />
       <CartDrawer />
-      <InstagramButton />
-      <AnnouncementBar />
-      {!isHiddenRoute && <Navbar />}
+      <WhatsAppButton /> {/* <-- FIXED COMPONENT */}
+      {/* --- GROUPED NAV & BANNER --- */}
+      {!isHiddenRoute && (
+        <div className="w-full z-50 flex flex-col relative">
+          <AnnouncementBar />
+          <Navbar />
+        </div>
+      )}
       <div className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -62,7 +67,7 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/quality" element={<Quality />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
-          <Route path="/contact" element={<Contact />} /> {/* <-- NEW ROUTE */}
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
