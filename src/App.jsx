@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react"; // <-- IMPORTED useEffect
 import AgeVerification from "./components/AgeVerification";
+import AnnouncementBar from "./components/AnnouncementBar";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -43,6 +44,7 @@ function App() {
       <AgeVerification />
       <CartDrawer />
       <InstagramButton />
+      <AnnouncementBar />
       {!isHiddenRoute && <Navbar />}
       <div className="flex-grow">
         <Routes>
