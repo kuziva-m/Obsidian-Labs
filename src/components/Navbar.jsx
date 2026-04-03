@@ -17,7 +17,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar">
+    <nav className="navbar" style={{ position: "sticky", top: 0, zIndex: 50 }}>
+      {/* Forced sticky positioning overrides CSS to stop overlapping the Announcement Bar */}
       <div className="container mx-auto nav-inner">
         {/* --- LOGO (LEFT) --- */}
         <Link to="/" className="nav-logo-wrapper" onClick={closeMenu}>
