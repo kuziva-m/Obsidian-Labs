@@ -1,7 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import AgeVerification from "./components/AgeVerification";
-import AnnouncementBar from "./components/AnnouncementBar";
+import HolidayPopup from "./components/HolidayPopup"; // <-- IMPORTED THE NEW POPUP
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -17,7 +17,7 @@ import CartDrawer from "./components/CartDrawer";
 import FAQ from "./pages/FAQ";
 import ResearchLibrary from "./pages/ResearchLibrary";
 import ResearchDivisions from "./pages/ResearchDivisions";
-import WhatsAppButton from "./components/WhatsAppButton"; // <-- FIXED IMPORT
+import WhatsAppButton from "./components/WhatsAppButton";
 import Terms from "./pages/Terms";
 import Quality from "./pages/Quality";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -42,12 +42,11 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen relative">
       <AgeVerification />
+      <HolidayPopup /> {/* <-- ADDED IT HERE */}
       <CartDrawer />
-      <WhatsAppButton /> {/* <-- FIXED COMPONENT */}
-      {/* --- GROUPED NAV & BANNER --- */}
+      <WhatsAppButton />
       {!isHiddenRoute && (
         <div className="w-full z-50 flex flex-col relative">
-          <AnnouncementBar />
           <Navbar />
         </div>
       )}
