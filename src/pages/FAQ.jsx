@@ -8,7 +8,6 @@ import {
   Hash,
   ShieldCheck,
   ThermometerSnowflake,
-  Ban,
   Dna,
   AlertOctagon,
   ChevronDown,
@@ -49,11 +48,6 @@ export default function FAQ() {
       icon: <Dna size={22} />,
       q: "Does your shipping method protect the peptides?",
       a: "Yes, all peptides are supplied lyophilised (freeze-dried) and packaged to protect them from heat and direct sunlight, helping preserve product integrity during transit.",
-    },
-    {
-      icon: <Ban size={22} />,
-      q: "Can I cancel my order?",
-      a: "If your order has not yet been dispatched, you may cancel it for a full refund.",
     },
     {
       icon: <ThermometerSnowflake size={22} />,
