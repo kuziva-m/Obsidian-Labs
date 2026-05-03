@@ -33,9 +33,6 @@ export default function CartDrawer() {
     {},
   );
 
-  // --- POPUP STATE ---
-  const [showHolidayPopup, setShowHolidayPopup] = useState(false);
-
   // 1. Get the slugs we should suggest based on current cart
   const suggestedSlugs = useMemo(
     () => getSuggestedProductSlugsForCart(cart),
@@ -97,7 +94,6 @@ export default function CartDrawer() {
 
   // --- ACTIONS ---
   const handleProceedToCheckout = () => {
-    setShowHolidayPopup(false);
     setIsCartOpen(false);
     navigate("/checkout");
   };
@@ -343,7 +339,7 @@ export default function CartDrawer() {
           </div>
 
           <button
-            onClick={() => setShowHolidayPopup(true)}
+            onClick={handleProceedToCheckout}
             disabled={cart.length === 0}
             className="w-full bg-[var(--baltic-sea)] text-white py-5 font-[Oswald] uppercase tracking-widest text-lg hover:bg-[var(--brick-red)] transition-all flex items-center justify-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
@@ -351,48 +347,6 @@ export default function CartDrawer() {
           </button>
         </div>
       </div>
-
-      {/* HOLIDAY CHECKOUT POPUP */}
-      {showHolidayPopup && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white max-w-md w-full rounded-sm shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200 border-2 border-[var(--baltic-sea)]">
-            <div className="bg-white p-6 text-center border-b-4 border-[var(--brick-red)] flex flex-col items-center">
-              <img
-                src="/assets/obsidian-logo-red.png"
-                alt="Obsidian Labs"
-                className="h-12 mb-3"
-              />
-              <h2 className="font-[Oswald] text-2xl md:text-3xl text-[var(--baltic-sea)] uppercase tracking-widest">
-                Holiday Notice
-              </h2>
-            </div>
-            <div className="p-6 md:p-8 text-center bg-gray-50">
-              <p className="font-body text-gray-700 text-[1.1rem] leading-relaxed">
-                Please note that all orders placed between{" "}
-                <strong className="text-[var(--baltic-sea)]">
-                  23 April and 2 May
-                </strong>{" "}
-                will be processed and shipped on{" "}
-                <strong className="text-[var(--brick-red)]">3 May</strong>.
-              </p>
-            </div>
-            <div className="p-4 bg-white border-t border-gray-200 flex flex-col gap-3">
-              <button
-                onClick={handleProceedToCheckout}
-                className="w-full bg-[var(--baltic-sea)] text-white py-4 font-[Oswald] uppercase tracking-widest text-sm hover:bg-[var(--brick-red)] transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] active:translate-y-1 active:shadow-none"
-              >
-                I Understand & Proceed
-              </button>
-              <button
-                onClick={() => setShowHolidayPopup(false)}
-                className="w-full bg-gray-100 text-gray-600 py-3 font-[Oswald] uppercase tracking-widest text-sm hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

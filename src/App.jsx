@@ -1,7 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import AgeVerification from "./components/AgeVerification";
-import AnnouncementBar from "./components/AnnouncementBar";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -47,7 +46,6 @@ function App() {
 
       {!isHiddenRoute && (
         <div className="w-full z-50 flex flex-col relative">
-          <AnnouncementBar />
           <Navbar />
         </div>
       )}
