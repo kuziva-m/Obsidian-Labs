@@ -9,6 +9,7 @@ import HomeResearch from "../components/home/HomeResearch";
 import HomeDisclaimer from "../components/home/HomeDisclaimer";
 import Animations from "../components/home/Animations";
 import Inventory from "../components/home/Inventory";
+import ReviewSection from "../components/home/ReviewSection"; // <-- IMPORTED REVIEW SECTION
 import SEO from "../components/SEO";
 import "./Home.css";
 
@@ -25,6 +26,7 @@ export default function Home() {
       <Services />
       <HomeFAQ />
       <HomeResearch />
+      <ReviewSection /> {/* <-- ADDED REVIEW SECTION HERE */}
       <HomeDisclaimer /> {/* 4. Research Use Only Disclaimer */}
       <Animations />
     </div>
